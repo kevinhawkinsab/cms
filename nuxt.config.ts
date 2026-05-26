@@ -1,14 +1,19 @@
 export default defineNuxtConfig({
-  ssr: false,
+  ssr: true,
   devtools: { enabled: false },
 
   nitro: {
-    preset: 'static',
+    prerender: {
+      crawlLinks: false,
+      routes: ['/'],
+    },
+    viteNode: {
+      socketPath: process.env.NUXT_VITE_NODE_SOCKET_PATH || 'nuxt-vite-node.sock',
+    },
   },
 
   vite: {
     server: {
-      // Prevent IPC socket conflicts when multiple instances start
       hmr: {
         protocol: 'ws',
         host: 'localhost',
