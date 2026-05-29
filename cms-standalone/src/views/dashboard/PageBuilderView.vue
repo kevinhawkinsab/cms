@@ -381,7 +381,15 @@
       </div>
     </div>
 
-    <!-- New Page Modal -->
+    <!-- Builder -->
+    <PageBuilder
+      v-else-if="activeRoute"
+      :route="activeRoute"
+      :post-id="activePostId"
+      @close="handleClose"
+    />
+
+    <!-- New Page Modal (outside v-if chain) -->
     <Teleport to="body">
       <Transition name="modal-fade">
         <div v-if="showNewPageModal" class="npb-overlay" @click.self="closeNewPageModal">
@@ -446,13 +454,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Builder -->
-    <PageBuilder
-      v-else-if="activeRoute"
-      :route="activeRoute"
-      :post-id="activePostId"
-      @close="handleClose"
-    />
   </div>
 </template>
 
