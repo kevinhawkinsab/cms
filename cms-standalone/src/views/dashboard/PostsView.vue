@@ -113,7 +113,7 @@
                   </div>
                   <span class="post-row__date">
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 1v2M8 1v2M1 5h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                    {{ formatDate(post.publishedAt) }}
+                    {{ formatDate(post.createdAt) }}
                   </span>
                 </div>
                 <h3 class="post-row__title">{{ post.title }}</h3>

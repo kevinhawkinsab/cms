@@ -748,18 +748,19 @@ export const useCmsStore = defineStore('cms', {
         if (!this.categories.length) {
           await this.fetchCategories()
         }
-        const [publishedResponse, hiddenResponse] = await Promise.all([
-          postsService.getAll({ isVisible: true, limit: 1, page: 1 }),
-          postsService.getAll({ isVisible: false, limit: 1, page: 1 })
-        ])
 
-        const published = extractTotal(publishedResponse)
-        const hidden = extractTotal(hiddenResponse)
+        if (!this.posts.length || this.posts.length === 1) {
+          await this.fetchPosts({ limit: 1, page: 1 })
+        }
+
+
+        
+        console.log("HERE: ", this.posts);
 
         this.overview = {
-          total: published + hidden,
-          published,
-          hidden,
+          total: this.posts.length ?? 0,
+          published :  this.posts.filter((p) => p.isVisible).length,
+          hidden: this.posts.filter((p) => !p.isVisible).length,
           categories: this.categories.length
         }
         return this.overview
