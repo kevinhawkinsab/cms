@@ -101,6 +101,17 @@
         <svg class="quick-card__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </router-link>
 
+      <router-link to="/dashboard/users" class="quick-card" v-if="canManageUsers">
+        <div class="quick-card__icon" style="background:#f0f9ff;color:#0284c7">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M2 17c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 9.5h4M16 7.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <div class="quick-card__info">
+          <span class="quick-card__title">Usuarios</span>
+          <span class="quick-card__desc">Gestión de acceso al CMS</span>
+        </div>
+        <svg class="quick-card__arrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </router-link>
+
     </div>
 
     <!-- Company + User info -->
@@ -151,6 +162,7 @@ const canReadPosts = computed(() => authStore.hasAnyPermission(['posts.read','po
 const canReadCategories = computed(() => authStore.hasAnyPermission(['categories.read','categories.create','categories.edit']))
 const canReadMedia = computed(() => authStore.hasAnyPermission(['media.read','media.upload']))
 const canEditPageBuilder = computed(() => authStore.hasPermission('pagebuilder.edit'))
+const canManageUsers = computed(() => authStore.hasAnyPermission(['users.manage','users.read']))
 
 const refresh = async () => {
   refreshing.value = true

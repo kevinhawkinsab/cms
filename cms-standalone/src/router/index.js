@@ -51,6 +51,12 @@ const routes = [
         name: 'PageBuilder',
         component: () => import('@/views/dashboard/PageBuilderView.vue'),
         meta: { permission: 'pagebuilder.edit' }
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: () => import('@/views/dashboard/UsersView.vue'),
+        meta: { permission: 'users.manage' }
       }
     ]
   },

@@ -200,4 +200,12 @@ export const pageLayoutService = {
     })
 }
 
+export const usersService = {
+  getAll: () => api.get('/GetCMSUsers_CMS/users'),
+  validateByInternalId: (internalId) => api.get(`/ValidateEmployee_CMS/employees/${internalId}`),
+  getRoles: () => api.get('/GetRoles_CMS/roles'),
+  assignAccess: (userId, roleId) => api.post('/AssignCMSAccess_CMS/users/access', { UserId: userId, RoleId: roleId }),
+  removeAccess: (userId) => api.delete(`/RemoveCMSAccess_CMS/users/${userId}/access`)
+}
+
 export default api

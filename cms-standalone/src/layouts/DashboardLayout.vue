@@ -92,6 +92,23 @@
         </router-link>
 
         <div class="sidebar-divider"></div>
+        <router-link
+          v-if="canManageUsers"
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/users') }"
+          to="/dashboard/users"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M1.5 13.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M11 7.5h3M12.5 6v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Usuarios</span>
+        </router-link>
+
         <div class="sidebar-section-label">Herramientas</div>
 
         <router-link
@@ -220,6 +237,7 @@ const canReadPosts       = computed(() => authStore.hasAnyPermission(['posts.rea
 const canReadCategories  = computed(() => authStore.hasAnyPermission(['categories.read','categories.create','categories.edit','categories.delete']))
 const canReadMedia       = computed(() => authStore.hasAnyPermission(['media.read','media.upload','media.delete']))
 const canEditPageBuilder = computed(() => authStore.hasPermission('pagebuilder.edit'))
+const canManageUsers     = computed(() => authStore.hasAnyPermission(['users.manage','users.read']))
 
 const currentPageTitle = computed(() => {
   const map = {
@@ -227,6 +245,7 @@ const currentPageTitle = computed(() => {
     'Categories': 'Categorías',
     'Media': 'Multimedia',
     'PageBuilder': 'Page Builder',
+    'Users': 'Usuarios',
     'Dashboard': 'Dashboard'
   }
   return map[route.name] || 'Panel'
