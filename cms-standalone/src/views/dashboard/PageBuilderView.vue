@@ -193,6 +193,75 @@
               </div>
             </div>
 
+            <!-- Origen -->
+            <div
+              class="card border-0 route-card"
+              @click="activeRoute = '/origen'"
+            >
+              <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-4">
+                  <div class="route-icon">
+                    <i class="fas fa-mountain"></i>
+                  </div>
+                  <div class="route-arrow">
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <h5 class="mb-0 fw-semibold text-dark route-title">Origen</h5>
+                  <span class="badge rounded-pill text-bg-light border fw-medium">Page</span>
+                </div>
+                <code class="route-code">/origen</code>
+                <p class="text-secondary small mb-0 mt-3 route-text">Historia y origen del producto.</p>
+              </div>
+            </div>
+
+            <!-- Catalogo -->
+            <div
+              class="card border-0 route-card"
+              @click="activeRoute = '/catalogo'"
+            >
+              <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-4">
+                  <div class="route-icon">
+                    <i class="fas fa-th-large"></i>
+                  </div>
+                  <div class="route-arrow">
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <h5 class="mb-0 fw-semibold text-dark route-title">Catálogo</h5>
+                  <span class="badge rounded-pill text-bg-light border fw-medium">Page</span>
+                </div>
+                <code class="route-code">/catalogo</code>
+                <p class="text-secondary small mb-0 mt-3 route-text">Catálogo completo de productos.</p>
+              </div>
+            </div>
+
+            <!-- Sostenibilidad -->
+            <div
+              class="card border-0 route-card"
+              @click="activeRoute = '/sostenibilidad'"
+            >
+              <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-4">
+                  <div class="route-icon">
+                    <i class="fas fa-leaf"></i>
+                  </div>
+                  <div class="route-arrow">
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <h5 class="mb-0 fw-semibold text-dark route-title">Sostenibilidad</h5>
+                  <span class="badge rounded-pill text-bg-light border fw-medium">Page</span>
+                </div>
+                <code class="route-code">/sostenibilidad</code>
+                <p class="text-secondary small mb-0 mt-3 route-text">Compromiso ambiental y sostenibilidad.</p>
+              </div>
+            </div>
+
             <!-- Blog -->
             <div
               class="card border-0 route-card"
