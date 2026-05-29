@@ -43,9 +43,9 @@
     </div>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4">
-      <NuxtLink to="/blog" class="btn btn-bsw-outline article-back-btn">
+      <router-link to="/blog" class="btn btn-bsw-outline article-back-btn">
         <i class="fas fa-arrow-left me-2"></i>Volver al Blog
-      </NuxtLink>
+      </router-link>
     </div>
 
     <div v-if="editing" class="pt-editor">
@@ -80,8 +80,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update'])
 
-const config = useRuntimeConfig()
-const siteUrl = (config.public.siteUrl || 'https://www.bambitospringwater.com').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL || 'https://www.bambitospringwater.com').replace(/\/$/, '')
 const content = computed(() => props.block.content || {})
 const computedStyles = computed(() => ({ ...props.block.styles }))
 const newTag = ref('')
