@@ -269,12 +269,30 @@ const extractPagination = (response, fallback = {}) => {
 }
 
 const extractTotal = (response) => {
-  const payload = response?.data ?? response
+  // Axios wraps the JSON body in response.data; unwrap one or two levels
+  const body = response?.data ?? response
+  // Some APIs nest everything under a second .data key
+  const payload = (body?.data !== undefined && typeof body.data === 'object' && !Array.isArray(body.data))
+    ? body.data
+    : body
+
+  // Explicit pagination object (most common)
   if (payload?.pagination?.total !== undefined) return Number(payload.pagination.total)
+  if (body?.pagination?.total !== undefined) return Number(body.pagination.total)
+
+  // Flat total/count on either level
   if (payload?.total !== undefined) return Number(payload.total)
+  if (body?.total !== undefined) return Number(body.total)
   if (payload?.count !== undefined) return Number(payload.count)
+  if (body?.count !== undefined) return Number(body.count)
+
+  // Fall back to counting array items
+  if (Array.isArray(payload?.items)) return payload.items.length
   if (Array.isArray(payload?.data)) return payload.data.length
   if (Array.isArray(payload)) return payload.length
+  if (Array.isArray(body?.items)) return body.items.length
+  if (Array.isArray(body)) return body.length
+
   return 0
 }
 
@@ -752,6 +770,11 @@ export const useCmsStore = defineStore('cms', {
           postsService.getAll({ isVisible: true, limit: 1, page: 1 }),
           postsService.getAll({ isVisible: false, limit: 1, page: 1 })
         ])
+
+        if (import.meta.env.DEV) {
+          console.debug('[fetchOverview] publishedResponse.data:', publishedResponse?.data)
+          console.debug('[fetchOverview] hiddenResponse.data:', hiddenResponse?.data)
+        }
 
         const published = extractTotal(publishedResponse)
         const hidden = extractTotal(hiddenResponse)
