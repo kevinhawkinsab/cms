@@ -1,0 +1,110 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
+
+const routes = [
+  {
+    path: '/',
+    redirect: '/login'
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/auth/LoginView.vue'),
+    meta: { public: true }
+  },
+  {
+    path: '/select-company',
+    name: 'SelectCompany',
+    component: () => import('@/views/dashboard/CompanySelectView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/dashboard',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, requiresCompany: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/DashboardHome.vue')
+      },
+      {
+        path: 'posts',
+        name: 'Posts',
+        component: () => import('@/views/dashboard/PostsView.vue'),
+        meta: { permission: 'posts.read' }
+      },
+      {
+        path: 'categories',
+        name: 'Categories',
+        component: () => import('@/views/dashboard/CategoriesView.vue'),
+        meta: { permission: 'categories.read' }
+      },
+      {
+        path: 'media',
+        name: 'Media',
+        component: () => import('@/views/dashboard/MediaView.vue'),
+        meta: { permission: 'media.read' }
+      },
+      {
+        path: 'page-builder',
+        name: 'PageBuilder',
+        component: () => import('@/views/dashboard/PageBuilderView.vue'),
+        meta: { permission: 'pagebuilder.edit' }
+      }
+    ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/login'
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+router.beforeEach(async (to, from) => {
+  const authStore = useAuthStore()
+
+  // Public routes pass through
+  if (to.meta.public) return true
+
+  // Ensure session is valid
+  const hasSession = await authStore.ensureSession()
+
+  if (!hasSession || !authStore.isAuthenticated) {
+    return {
+      name: 'Login',
+      query: { redirect: to.fullPath }
+    }
+  }
+
+  // Authenticated but needs company selection
+  if (to.meta.requiresCompany && !authStore.selectedCompany) {
+    if (to.name !== 'SelectCompany') {
+      return { name: 'SelectCompany' }
+    }
+  }
+
+  // Permission check
+  const requiredPermission = to.meta.permission
+  if (requiredPermission) {
+    const hasPermAny = authStore.hasAnyPermission(
+      requiredPermission.includes('.')
+        ? [requiredPermission, requiredPermission.replace(/\.\w+$/, '.read'), requiredPermission.replace(/\.\w+$/, '.create'), requiredPermission.replace(/\.\w+$/, '.edit')]
+        : [requiredPermission]
+    )
+    if (!hasPermAny) {
+      return {
+        name: 'Dashboard',
+        query: { denied: requiredPermission }
+      }
+    }
+  }
+
+  return true
+})
+
+export default router
