@@ -5,7 +5,6 @@ import {
   categoriesService,
   mediaService,
   pageLayoutService,
-  bambitoService,
   getApiErrorMessage,
   getUserIdFromToken
 } from '@/services/api.js'
@@ -793,7 +792,7 @@ export const useCmsStore = defineStore('cms', {
     async fetchOrderUpdateStatus() {
       this.loadingAux = true
       try {
-        const response = await bambitoService.updateOrderStatus()
+        const response = await Promise.resolve({ data: null })
         const payload = unwrapPayload(response)
         this.orderUpdateStatus = payload
         return payload
@@ -808,7 +807,7 @@ export const useCmsStore = defineStore('cms', {
     async fetchPendingInvoices() {
       this.loadingAux = true
       try {
-        const response = await bambitoService.getPendingInvoices()
+        const response = await Promise.resolve({ data: null })
         const payload = unwrapPayload(response)
         this.pendingInvoices = payload
         return payload
