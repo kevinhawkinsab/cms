@@ -23,6 +23,7 @@
         <div class="stat-chip__info">
           <span class="stat-chip__value">{{ overview.total }}</span>
           <span class="stat-chip__label">Publicaciones totales</span>
+          {{ console.log(overview) }}
         </div>
       </div>
       <div class="stat-chip">

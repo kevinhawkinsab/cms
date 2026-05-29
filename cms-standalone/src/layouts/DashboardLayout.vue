@@ -21,7 +21,7 @@
         </div>
         <div class="sidebar-logo__text">
           <span class="sidebar-logo__name">CMS Panel</span>
-          <span class="sidebar-logo__version">v1.0</span>
+          <span class="sidebar-logo__version">Gestión de contenido</span>
         </div>
       </div>
 
@@ -41,11 +41,25 @@
       <nav class="sidebar-nav" aria-label="Navegación principal">
 
         <div class="sidebar-section-label">Contenido</div>
-
+        <router-link
+          v-if="canReadCategories"
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard') }"
+          to="/dashboard"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4.5h12M2 8h9M2 11.5h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <circle cx="13" cy="11.5" r="2" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Inicio</span>
+        </router-link>
         <router-link
           v-if="canReadPosts"
           class="sidebar-link"
-          :class="{ active: isActive('/dashboard/posts') || isActive('/dashboard') }"
+          :class="{ active: isActive('/dashboard/posts') }"
           to="/dashboard/posts"
           @click="onNavClick"
         >
