@@ -268,6 +268,18 @@ export const authService = {
   }
 }
 
+export const companiesService = {
+  getAll: async (credentials) => {
+    return await api.post('/CMS/login', credentials)
+  },
+  update: async (credentials) => {
+    return await api.post('/CMS/login', credentials)
+  },
+  create: async (credentials) => {
+    return await api.post('/CMS/login', credentials)
+  },
+}
+
 export const postsService = {
   getAll: (params = {}) => api.get('/GetPosts_CMS/posts', { params }),
   getById: (id) => api.get(`/GetPostById_CMS/${id}`),
