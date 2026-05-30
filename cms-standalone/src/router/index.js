@@ -67,8 +67,37 @@ const routes = [
       {
         path: 'companies',
         name: 'Companies',
-        component: () => import('@/views/dashboard/CompanyView.vue'),
+        component: () => import('@/views/dashboard/CompaniesView.vue'),
         meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/dashboard/RolesView.vue'),
+        meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'audit-log',
+        name: 'AuditLog',
+        component: () => import('@/views/dashboard/AuditLogView.vue'),
+        meta: { permission: 'audit.read' }
+      },
+      {
+        path: 'seo',
+        name: 'Seo',
+        component: () => import('@/views/dashboard/SeoView.vue'),
+        meta: { permission: 'posts.edit' }
+      },
+      {
+        path: 'analytics',
+        name: 'Analytics',
+        component: () => import('@/views/dashboard/AnalyticsView.vue'),
+        meta: { permission: 'analytics.read' }
+      },
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/views/dashboard/NotificationsView.vue')
       }
     ]
   },
