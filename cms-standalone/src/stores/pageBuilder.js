@@ -161,6 +161,111 @@ const BLOCK_TYPES = {
     icon: 'fas fa-arrows-alt-v',
     defaultContent: { height: '40px' },
     defaultStyles: {}
+  },
+  'hero-section': {
+    label: 'Hero / Banner de seccion',
+    icon: 'fas fa-star',
+    defaultContent: {
+      eyebrow: '',
+      heading: 'Titulo principal del hero',
+      body: 'Descripcion o subtitulo del hero. Escribe el contenido aqui.',
+      image: '',
+      imageAlt: '',
+      badgeLabel: '',
+      badgeText: '',
+      imagePosition: 'right',
+      bgColor: '#f5f0eb'
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  columns: {
+    label: 'Columnas de texto',
+    icon: 'fas fa-columns',
+    defaultContent: {
+      columns: [
+        { title: 'Columna 1', text: 'Escribe el contenido de esta columna aqui.' },
+        { title: 'Columna 2', text: 'Escribe el contenido de esta columna aqui.' }
+      ],
+      count: 2,
+      gap: 'normal'
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  'features-list': {
+    label: 'Lista de caracteristicas',
+    icon: 'fas fa-list-check',
+    defaultContent: {
+      title: '',
+      subtitle: '',
+      items: [
+        { icon: 'fas fa-check', title: 'Caracteristica 1', description: 'Descripcion de la caracteristica.' },
+        { icon: 'fas fa-check', title: 'Caracteristica 2', description: 'Descripcion de la caracteristica.' },
+        { icon: 'fas fa-check', title: 'Caracteristica 3', description: 'Descripcion de la caracteristica.' }
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  'stats-row': {
+    label: 'Fila de estadisticas',
+    icon: 'fas fa-chart-bar',
+    defaultContent: {
+      items: [
+        { value: '20', label: 'Anos de experiencia', suffix: '+' },
+        { value: '500', label: 'Clientes satisfechos', suffix: '+' },
+        { value: '100', label: 'Proyectos completados', suffix: '%' }
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  'cta-banner': {
+    label: 'Banner llamada a la accion',
+    icon: 'fas fa-bullhorn',
+    defaultContent: {
+      heading: 'Llamada a la accion principal',
+      subtext: 'Subtexto o descripcion del CTA.',
+      primaryBtn: { text: 'Comenzar ahora', url: '#' },
+      secondaryBtn: { text: '', url: '' },
+      bgColor: '#1e3a2f',
+      textColor: '#ffffff',
+      bgImage: ''
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  accordion: {
+    label: 'Acordeon / FAQ',
+    icon: 'fas fa-question-circle',
+    defaultContent: {
+      title: 'Preguntas Frecuentes',
+      items: [
+        { question: '¿Primera pregunta frecuente?', answer: 'Respuesta a la primera pregunta.' },
+        { question: '¿Segunda pregunta frecuente?', answer: 'Respuesta a la segunda pregunta.' }
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  table: {
+    label: 'Tabla de datos',
+    icon: 'fas fa-table',
+    defaultContent: {
+      caption: '',
+      headers: ['Columna 1', 'Columna 2', 'Columna 3'],
+      rows: [
+        ['Dato 1', 'Dato 2', 'Dato 3'],
+        ['Dato 4', 'Dato 5', 'Dato 6']
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  testimonial: {
+    label: 'Testimonios',
+    icon: 'fas fa-quote-right',
+    defaultContent: {
+      items: [
+        { quote: 'Excelente producto, totalmente recomendado.', author: 'Maria Garcia', role: 'Cliente', avatar: '', rating: 5 },
+        { quote: 'Servicio de primera calidad y muy profesional.', author: 'Carlos Lopez', role: 'Empresa ABC', avatar: '', rating: 5 }
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
   }
 }
 

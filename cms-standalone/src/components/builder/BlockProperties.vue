@@ -419,6 +419,241 @@
         </div>
       </template>
 
+      <!-- HERO SECTION -->
+      <template v-if="block.type === 'hero-section'">
+        <div class="prop-group">
+          <label class="prop-label">Eyebrow</label>
+          <input class="form-control prop-input" :value="block.content.eyebrow" @input="updateContent({ eyebrow: $event.target.value })" placeholder="Texto superior pequeño" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Titulo</label>
+          <input class="form-control prop-input" :value="block.content.heading" @input="updateContent({ heading: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Cuerpo</label>
+          <textarea class="form-control prop-input" rows="3" :value="block.content.body" @input="updateContent({ body: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">URL de imagen</label>
+          <input class="form-control prop-input" :value="block.content.image" @input="updateContent({ image: $event.target.value })" placeholder="https://..." />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Alt de imagen</label>
+          <input class="form-control prop-input" :value="block.content.imageAlt" @input="updateContent({ imageAlt: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Badge etiqueta</label>
+          <input class="form-control prop-input" :value="block.content.badgeLabel" @input="updateContent({ badgeLabel: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Badge texto</label>
+          <input class="form-control prop-input" :value="block.content.badgeText" @input="updateContent({ badgeText: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Posicion de imagen</label>
+          <select class="form-select prop-input" :value="block.content.imagePosition || 'right'" @change="updateContent({ imagePosition: $event.target.value })">
+            <option value="right">Derecha</option>
+            <option value="left">Izquierda</option>
+          </select>
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Color de fondo</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-color prop-color" :value="block.content.bgColor || '#f5f0eb'" @input="updateContent({ bgColor: $event.target.value })" />
+            <input class="form-control prop-input flex-grow-1" :value="block.content.bgColor || '#f5f0eb'" @input="updateContent({ bgColor: $event.target.value })" />
+          </div>
+        </div>
+      </template>
+
+      <!-- COLUMNS -->
+      <template v-if="block.type === 'columns'">
+        <div class="prop-group">
+          <label class="prop-label">Numero de columnas</label>
+          <select class="form-select prop-input" :value="block.content.count || 2" @change="updateContent({ count: Number($event.target.value) })">
+            <option value="2">2 columnas</option>
+            <option value="3">3 columnas</option>
+          </select>
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Espacio entre columnas</label>
+          <select class="form-select prop-input" :value="block.content.gap || 'normal'" @change="updateContent({ gap: $event.target.value })">
+            <option value="compact">Compacto</option>
+            <option value="normal">Normal</option>
+            <option value="wide">Amplio</option>
+          </select>
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Columnas ({{ block.content.count || 2 }})</h6>
+        <div v-for="(col, i) in (block.content.columns || [])" :key="i" class="prop-group">
+          <label class="prop-label">Columna {{ i + 1 }}</label>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="col.title" @change="updateColumn(i, 'title', $event.target.value)" placeholder="Titulo" />
+          <textarea class="form-control prop-input" rows="3" :value="col.text" @change="updateColumn(i, 'text', $event.target.value)" placeholder="Texto..." />
+        </div>
+      </template>
+
+      <!-- FEATURES LIST -->
+      <template v-if="block.type === 'features-list'">
+        <div class="prop-group">
+          <label class="prop-label">Titulo de seccion</label>
+          <input class="form-control prop-input" :value="block.content.title" @input="updateContent({ title: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Subtitulo</label>
+          <input class="form-control prop-input" :value="block.content.subtitle" @input="updateContent({ subtitle: $event.target.value })" />
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Items ({{ (block.content.items || []).length }})</h6>
+        <div v-for="(item, i) in (block.content.items || [])" :key="i" class="prop-group prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Item {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeFeatureItem(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.icon" @change="updateFeatureItem(i, 'icon', $event.target.value)" placeholder="Clase icono (fas fa-check)" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.title" @change="updateFeatureItem(i, 'title', $event.target.value)" placeholder="Titulo" />
+          <textarea class="form-control prop-input" rows="2" :value="item.description" @change="updateFeatureItem(i, 'description', $event.target.value)" placeholder="Descripcion" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addFeatureItem"><i class="fas fa-plus me-1"></i>Agregar item</button>
+      </template>
+
+      <!-- STATS ROW -->
+      <template v-if="block.type === 'stats-row'">
+        <h6 class="props-section-title">Estadisticas ({{ (block.content.items || []).length }})</h6>
+        <div v-for="(item, i) in (block.content.items || [])" :key="i" class="prop-group prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Stat {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeStatItem(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.value" @change="updateStatItem(i, 'value', $event.target.value)" placeholder="Valor (20)" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.suffix" @change="updateStatItem(i, 'suffix', $event.target.value)" placeholder="Sufijo (+)" />
+          <input class="form-control prop-input prop-input-sm" :value="item.label" @change="updateStatItem(i, 'label', $event.target.value)" placeholder="Etiqueta" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addStatItem"><i class="fas fa-plus me-1"></i>Agregar estadistica</button>
+      </template>
+
+      <!-- CTA BANNER -->
+      <template v-if="block.type === 'cta-banner'">
+        <div class="prop-group">
+          <label class="prop-label">Titulo</label>
+          <input class="form-control prop-input" :value="block.content.heading" @input="updateContent({ heading: $event.target.value })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Subtexto</label>
+          <textarea class="form-control prop-input" rows="2" :value="block.content.subtext" @input="updateContent({ subtext: $event.target.value })" />
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Boton primario</h6>
+        <div class="prop-group">
+          <label class="prop-label">Texto</label>
+          <input class="form-control prop-input" :value="block.content.primaryBtn && block.content.primaryBtn.text" @input="updateContent({ primaryBtn: { ...(block.content.primaryBtn || {}), text: $event.target.value } })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">URL</label>
+          <input class="form-control prop-input" :value="block.content.primaryBtn && block.content.primaryBtn.url" @input="updateContent({ primaryBtn: { ...(block.content.primaryBtn || {}), url: $event.target.value } })" />
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Boton secundario</h6>
+        <div class="prop-group">
+          <label class="prop-label">Texto</label>
+          <input class="form-control prop-input" :value="block.content.secondaryBtn && block.content.secondaryBtn.text" @input="updateContent({ secondaryBtn: { ...(block.content.secondaryBtn || {}), text: $event.target.value } })" />
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">URL</label>
+          <input class="form-control prop-input" :value="block.content.secondaryBtn && block.content.secondaryBtn.url" @input="updateContent({ secondaryBtn: { ...(block.content.secondaryBtn || {}), url: $event.target.value } })" />
+        </div>
+        <div class="props-divider"></div>
+        <div class="prop-group">
+          <label class="prop-label">Color de fondo</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-color prop-color" :value="block.content.bgColor || '#1e3a2f'" @input="updateContent({ bgColor: $event.target.value })" />
+            <input class="form-control prop-input flex-grow-1" :value="block.content.bgColor || '#1e3a2f'" @input="updateContent({ bgColor: $event.target.value })" />
+          </div>
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Color de texto</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-color prop-color" :value="block.content.textColor || '#ffffff'" @input="updateContent({ textColor: $event.target.value })" />
+            <input class="form-control prop-input flex-grow-1" :value="block.content.textColor || '#ffffff'" @input="updateContent({ textColor: $event.target.value })" />
+          </div>
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Imagen de fondo URL</label>
+          <input class="form-control prop-input" :value="block.content.bgImage" @input="updateContent({ bgImage: $event.target.value })" placeholder="https://..." />
+        </div>
+      </template>
+
+      <!-- ACCORDION -->
+      <template v-if="block.type === 'accordion'">
+        <div class="prop-group">
+          <label class="prop-label">Titulo de seccion</label>
+          <input class="form-control prop-input" :value="block.content.title" @input="updateContent({ title: $event.target.value })" />
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Items ({{ (block.content.items || []).length }})</h6>
+        <div v-for="(item, i) in (block.content.items || [])" :key="i" class="prop-group prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Item {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeAccordionItem(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.question" @change="updateAccordionItem(i, 'question', $event.target.value)" placeholder="Pregunta" />
+          <textarea class="form-control prop-input" rows="3" :value="item.answer" @change="updateAccordionItem(i, 'answer', $event.target.value)" placeholder="Respuesta" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addAccordionItem"><i class="fas fa-plus me-1"></i>Agregar item</button>
+      </template>
+
+      <!-- TABLE -->
+      <template v-if="block.type === 'table'">
+        <div class="prop-group">
+          <label class="prop-label">Titulo / Caption</label>
+          <input class="form-control prop-input" :value="block.content.caption" @input="updateContent({ caption: $event.target.value })" />
+        </div>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Columnas ({{ (block.content.headers || []).length }})</h6>
+        <div v-for="(header, i) in (block.content.headers || [])" :key="i" class="prop-group">
+          <div class="d-flex gap-2 align-items-center">
+            <input class="form-control prop-input flex-grow-1" :value="header" @change="updateTableHeader(i, $event.target.value)" :placeholder="`Col ${i + 1}`" />
+            <button class="prop-img-remove" @click="removeTableColumn(i)"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <button class="btn btn-sm prop-add-btn mb-2" @click="addTableColumn"><i class="fas fa-plus me-1"></i>Agregar columna</button>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Filas ({{ (block.content.rows || []).length }})</h6>
+        <div v-for="(row, ri) in (block.content.rows || [])" :key="ri" class="prop-group prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Fila {{ ri + 1 }}</span>
+            <button class="prop-img-remove" @click="removeTableRow(ri)"><i class="fas fa-times"></i></button>
+          </div>
+          <input
+            v-for="(cell, ci) in row"
+            :key="ci"
+            class="form-control prop-input prop-input-sm mb-1"
+            :value="cell"
+            @change="updateTableCell(ri, ci, $event.target.value)"
+            :placeholder="`Celda ${ci + 1}`"
+          />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addTableRow"><i class="fas fa-plus me-1"></i>Agregar fila</button>
+      </template>
+
+      <!-- TESTIMONIAL -->
+      <template v-if="block.type === 'testimonial'">
+        <h6 class="props-section-title">Testimonios ({{ (block.content.items || []).length }})</h6>
+        <div v-for="(item, i) in (block.content.items || [])" :key="i" class="prop-group prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Testimonio {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeTestimonialItem(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <textarea class="form-control prop-input mb-1" rows="3" :value="item.quote" @change="updateTestimonialItem(i, 'quote', $event.target.value)" placeholder="Cita / testimonio" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.author" @change="updateTestimonialItem(i, 'author', $event.target.value)" placeholder="Nombre del autor" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.role" @change="updateTestimonialItem(i, 'role', $event.target.value)" placeholder="Cargo o empresa" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.avatar" @change="updateTestimonialItem(i, 'avatar', $event.target.value)" placeholder="URL avatar" />
+          <div class="prop-group">
+            <label class="prop-label">Estrellas ({{ item.rating || 5 }})</label>
+            <input class="form-control prop-input" type="number" min="1" max="5" :value="item.rating || 5" @change="updateTestimonialItem(i, 'rating', Number($event.target.value))" />
+          </div>
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addTestimonialItem"><i class="fas fa-plus me-1"></i>Agregar testimonio</button>
+      </template>
+
       <!-- COMMON STYLES -->
       <div class="props-divider"></div>
       <h6 class="props-section-title">Estilos</h6>
@@ -551,6 +786,125 @@ function addBreadcrumb() {
   if (!block.value) return
   const bcs = [...(block.value.content?.breadcrumbs || []), { label: 'Nuevo', url: '' }]
   store.updateBlockContent(block.value.id, { breadcrumbs: bcs })
+}
+
+// --- Columns helpers ---
+function updateColumn(index, field, value) {
+  if (!block.value) return
+  const columns = JSON.parse(JSON.stringify(block.value.content?.columns || []))
+  while (columns.length <= index) columns.push({ title: '', text: '' })
+  columns[index][field] = value
+  store.updateBlockContent(block.value.id, { columns })
+}
+
+// --- Features List helpers ---
+function updateFeatureItem(index, field, value) {
+  if (!block.value) return
+  const items = JSON.parse(JSON.stringify(block.value.content?.items || []))
+  if (items[index]) { items[index][field] = value; store.updateBlockContent(block.value.id, { items }) }
+}
+function removeFeatureItem(index) {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || [])]
+  items.splice(index, 1)
+  store.updateBlockContent(block.value.id, { items })
+}
+function addFeatureItem() {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || []), { icon: 'fas fa-check', title: 'Nueva caracteristica', description: '' }]
+  store.updateBlockContent(block.value.id, { items })
+}
+
+// --- Stats Row helpers ---
+function updateStatItem(index, field, value) {
+  if (!block.value) return
+  const items = JSON.parse(JSON.stringify(block.value.content?.items || []))
+  if (items[index]) { items[index][field] = value; store.updateBlockContent(block.value.id, { items }) }
+}
+function removeStatItem(index) {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || [])]
+  items.splice(index, 1)
+  store.updateBlockContent(block.value.id, { items })
+}
+function addStatItem() {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || []), { value: '0', label: 'Nueva estadistica', suffix: '' }]
+  store.updateBlockContent(block.value.id, { items })
+}
+
+// --- Accordion helpers ---
+function updateAccordionItem(index, field, value) {
+  if (!block.value) return
+  const items = JSON.parse(JSON.stringify(block.value.content?.items || []))
+  if (items[index]) { items[index][field] = value; store.updateBlockContent(block.value.id, { items }) }
+}
+function removeAccordionItem(index) {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || [])]
+  items.splice(index, 1)
+  store.updateBlockContent(block.value.id, { items })
+}
+function addAccordionItem() {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || []), { question: 'Nueva pregunta', answer: '' }]
+  store.updateBlockContent(block.value.id, { items })
+}
+
+// --- Table helpers ---
+function updateTableHeader(index, value) {
+  if (!block.value) return
+  const headers = [...(block.value.content?.headers || [])]
+  headers[index] = value
+  store.updateBlockContent(block.value.id, { headers })
+}
+function addTableColumn() {
+  if (!block.value) return
+  const headers = [...(block.value.content?.headers || []), `Col ${(block.value.content?.headers?.length || 0) + 1}`]
+  const rows = (block.value.content?.rows || []).map(row => [...row, ''])
+  store.updateBlockContent(block.value.id, { headers, rows })
+}
+function removeTableColumn(index) {
+  if (!block.value) return
+  const headers = [...(block.value.content?.headers || [])]
+  headers.splice(index, 1)
+  const rows = (block.value.content?.rows || []).map(row => { const r = [...row]; r.splice(index, 1); return r })
+  store.updateBlockContent(block.value.id, { headers, rows })
+}
+function updateTableCell(rowIndex, colIndex, value) {
+  if (!block.value) return
+  const rows = JSON.parse(JSON.stringify(block.value.content?.rows || []))
+  if (rows[rowIndex]) { rows[rowIndex][colIndex] = value; store.updateBlockContent(block.value.id, { rows }) }
+}
+function addTableRow() {
+  if (!block.value) return
+  const colCount = (block.value.content?.headers || []).length || 3
+  const rows = [...(block.value.content?.rows || []), Array(colCount).fill('')]
+  store.updateBlockContent(block.value.id, { rows })
+}
+function removeTableRow(index) {
+  if (!block.value) return
+  const rows = [...(block.value.content?.rows || [])]
+  rows.splice(index, 1)
+  store.updateBlockContent(block.value.id, { rows })
+}
+
+// --- Testimonial helpers ---
+function updateTestimonialItem(index, field, value) {
+  if (!block.value) return
+  const items = JSON.parse(JSON.stringify(block.value.content?.items || []))
+  if (items[index]) { items[index][field] = value; store.updateBlockContent(block.value.id, { items }) }
+}
+function removeTestimonialItem(index) {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || [])]
+  items.splice(index, 1)
+  store.updateBlockContent(block.value.id, { items })
+}
+function addTestimonialItem() {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || []), { quote: '', author: '', role: '', avatar: '', rating: 5 }]
+  store.updateBlockContent(block.value.id, { items })
 }
 
 // --- Front Page tag helpers ---

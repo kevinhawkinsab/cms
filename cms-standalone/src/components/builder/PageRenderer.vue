@@ -27,6 +27,14 @@ import PostSidebar from './blocks/PostSidebar.vue'
 import ImageGallery from './blocks/ImageGallery.vue'
 import PostTags from './blocks/PostTags.vue'
 import FrontPage from './blocks/FrontPage.vue'
+import HeroSection from './blocks/HeroSection.vue'
+import ColumnsBlock from './blocks/ColumnsBlock.vue'
+import FeaturesList from './blocks/FeaturesList.vue'
+import StatsRow from './blocks/StatsRow.vue'
+import CtaBanner from './blocks/CtaBanner.vue'
+import AccordionBlock from './blocks/AccordionBlock.vue'
+import TableBlock from './blocks/TableBlock.vue'
+import TestimonialBlock from './blocks/TestimonialBlock.vue'
 
 const props = defineProps({
   layout: { type: Object, default: null },
@@ -47,7 +55,15 @@ const blockComponentMap = {
   'post-sidebar': PostSidebar,
   'image-gallery': ImageGallery,
   'post-tags': PostTags,
-  'front-page': FrontPage
+  'front-page': FrontPage,
+  'hero-section': HeroSection,
+  columns: ColumnsBlock,
+  'features-list': FeaturesList,
+  'stats-row': StatsRow,
+  'cta-banner': CtaBanner,
+  accordion: AccordionBlock,
+  table: TableBlock,
+  testimonial: TestimonialBlock
 }
 
 function getBlockComponent(type) {
