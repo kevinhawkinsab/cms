@@ -14,7 +14,7 @@
     <!-- Route Selector -->
     <div
       v-else-if="!activeRoute && !postLoaded"
-      class="container py-5"
+      class="container-fluid py-5"
     >
       <div class="mx-auto builder-wrapper">
         <!-- Header -->
@@ -609,7 +609,7 @@ watch(
 /* Wrapper */
 
 .builder-wrapper {
-  max-width: 900px;
+  max-width: 1600px;
 }
 
 /* Loading */

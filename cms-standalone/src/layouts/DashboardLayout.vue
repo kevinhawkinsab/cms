@@ -106,6 +106,7 @@
         </router-link>
 
         <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Seguridad</div>
         <router-link
           v-if="canManageUsers"
           class="sidebar-link"
@@ -122,7 +123,22 @@
           </span>
           <span class="sidebar-link__label">Usuarios</span>
         </router-link>
-
+        <router-link
+          v-if="canManageUsers"
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/companies') }"
+          to="/dashboard/companies"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="6" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M1.5 13.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M11 7.5h3M12.5 6v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Compañias</span>
+        </router-link>
         <div class="sidebar-section-label">Herramientas</div>
 
         <router-link

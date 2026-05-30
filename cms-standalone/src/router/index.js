@@ -13,6 +13,12 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/auth/ForgotPassword.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/select-company',
     name: 'SelectCompany',
     component: () => import('@/views/dashboard/CompanySelectView.vue'),
@@ -56,6 +62,12 @@ const routes = [
         path: 'users',
         name: 'Users',
         component: () => import('@/views/dashboard/UsersView.vue'),
+        meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'companies',
+        name: 'Companies',
+        component: () => import('@/views/dashboard/CompanyView.vue'),
         meta: { permission: 'users.manage' }
       }
     ]
