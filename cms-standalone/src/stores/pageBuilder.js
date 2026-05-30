@@ -323,6 +323,21 @@ const BLOCK_TYPES = {
       items: []
     },
     defaultStyles: { marginBottom: '24px' }
+  },
+  form: {
+    label: 'Formulario',
+    icon: 'fas fa-wpforms',
+    defaultContent: {
+      title: 'Contáctanos',
+      submitLabel: 'Enviar',
+      successMessage: '¡Gracias! Tu mensaje fue enviado.',
+      fields: [
+        { id: 'f1', type: 'text', label: 'Nombre', placeholder: 'Tu nombre', required: true },
+        { id: 'f2', type: 'email', label: 'Email', placeholder: 'tu@email.com', required: true },
+        { id: 'f3', type: 'textarea', label: 'Mensaje', placeholder: 'Tu mensaje...', required: false }
+      ]
+    },
+    defaultStyles: { marginBottom: '24px' }
   }
 }
 

@@ -106,6 +106,7 @@
         </router-link>
 
         <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Usuarios y acceso</div>
         <router-link
           v-if="canManageUsers"
           class="sidebar-link"
@@ -121,6 +122,39 @@
             </svg>
           </span>
           <span class="sidebar-link__label">Usuarios</span>
+        </router-link>
+
+        <router-link
+          v-if="canManageUsers"
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/roles') }"
+          to="/dashboard/roles"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Roles y permisos</span>
+        </router-link>
+
+        <router-link
+          v-if="canManageUsers"
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/companies') }"
+          to="/dashboard/companies"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="5" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5 5V4a3 3 0 0 1 6 0v1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M6 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Empresas</span>
         </router-link>
 
         <div class="sidebar-section-label">Herramientas</div>
@@ -142,6 +176,50 @@
           </span>
           <span class="sidebar-link__label">Page Builder</span>
           <span class="sidebar-link__badge">Pro</span>
+        </router-link>
+
+        <router-link
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/seo') }"
+          to="/dashboard/seo"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">SEO</span>
+        </router-link>
+
+        <router-link
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/analytics') }"
+          to="/dashboard/analytics"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 13l3-4 3 2 3-5 3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Analytics</span>
+        </router-link>
+
+        <router-link
+          class="sidebar-link"
+          :class="{ active: isActive('/dashboard/audit-log') }"
+          to="/dashboard/audit-log"
+          @click="onNavClick"
+        >
+          <span class="sidebar-link__icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="1.3"/>
+              <path d="M5 6h6M5 8.5h4M5 11h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="sidebar-link__label">Auditoría</span>
         </router-link>
 
       </nav>
@@ -184,6 +262,7 @@
           </div>
         </div>
         <div class="cms-topbar__right">
+          <NotificationBell />
           <div class="topbar-user-pill">
             <div class="topbar-user-pill__avatar">{{ userInitials }}</div>
             <span class="topbar-user-pill__name">{{ user?.firstName || 'Admin' }}</span>
@@ -228,6 +307,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useCmsStore } from '@/stores/cms.js'
 import { confirmAction, notify } from '@/services/notifications.js'
+import NotificationBell from '@/components/NotificationBell.vue'
 
 const router = useRouter()
 const route  = useRoute()
@@ -260,6 +340,12 @@ const currentPageTitle = computed(() => {
     'Media': 'Multimedia',
     'PageBuilder': 'Page Builder',
     'Users': 'Usuarios',
+    'Roles': 'Roles y Permisos',
+    'Companies': 'Empresas',
+    'AuditLog': 'Auditoría',
+    'Seo': 'SEO Manager',
+    'Analytics': 'Analytics',
+    'Notifications': 'Notificaciones',
     'Dashboard': 'Dashboard'
   }
   return map[route.name] || 'Panel'

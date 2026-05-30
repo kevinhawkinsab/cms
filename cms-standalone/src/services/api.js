@@ -50,13 +50,63 @@ export const getApiErrorMessage = (error) => {
   )
 }
 
+// ── Audit helpers ──────────────────────────────────────────────────────────────
+
+function inferAction(method, url) {
+  if (url.includes('/login')) return 'LOGIN'
+  if (url.includes('/logout')) return 'LOGOUT'
+  if (url.includes('Visibility') || url.includes('visibility')) return 'PUBLISH'
+  if (method === 'POST') return 'CREATE'
+  if (method === 'PUT' || method === 'PATCH') return 'UPDATE'
+  if (method === 'DELETE') return 'DELETE'
+  return 'VIEW'
+}
+
+function inferEntity(url) {
+  if (url.includes('/posts') || url.includes('Post')) return 'Post'
+  if (url.includes('/categories') || url.includes('Categor')) return 'Category'
+  if (url.includes('/media') || url.includes('Media')) return 'Media'
+  if (url.includes('/users') || url.includes('User')) return 'User'
+  if (url.includes('/roles') || url.includes('Role')) return 'Role'
+  if (url.includes('PageLayout') || url.includes('layout')) return 'PageLayout'
+  if (url.includes('/login') || url.includes('/logout')) return 'Session'
+  return 'System'
+}
+
+function shouldAudit(method, url) {
+  if (method !== 'GET') return true
+  // Log specific GET endpoints
+  if (url.includes('/login') || url.includes('/me')) return true
+  return false
+}
+
+function sendAuditEntry(entry) {
+  import('@/stores/auditLog.js')
+    .then((mod) => {
+      const store = mod.useAuditLogStore?.()
+      if (store && typeof store.addEntry === 'function') {
+        store.addEntry(entry)
+      }
+    })
+    .catch(() => {
+      // Silently fail — audit must never block the app
+    })
+}
+
+// ── Axios instance ─────────────────────────────────────────────────────────────
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' }
 })
 
+// ── Request interceptors ───────────────────────────────────────────────────────
+
 api.interceptors.request.use((config) => {
   if (!isClient) return config
+
+  // Stamp start time for response-time calculation
+  config._startTime = Date.now()
 
   const token = getToken()
   if (token) {
@@ -76,9 +126,92 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// ── Response interceptors ──────────────────────────────────────────────────────
+
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // ── Audit (success) ──
+    try {
+      const config = response.config
+      const method = config.method?.toUpperCase() || 'GET'
+      const url = config.url || ''
+
+      if (isClient && shouldAudit(method, url)) {
+        const user = JSON.parse(localStorage.getItem('cms_user') || 'null')
+        const rawPayload = config.data
+        let parsedPayload = rawPayload
+        if (typeof rawPayload === 'string') {
+          try { parsedPayload = JSON.parse(rawPayload) } catch { parsedPayload = rawPayload }
+        }
+
+        sendAuditEntry({
+          id: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          userId: user?.id || user?.Id || 'anonymous',
+          userName: user?.fullName || user?.firstName || user?.email || 'Sistema',
+          userAvatar: null,
+          action: inferAction(method, url),
+          entity: inferEntity(url),
+          entityId: null,
+          description: `${method} ${url}`,
+          endpoint: url,
+          method,
+          statusCode: response.status,
+          responseTimeMs: Date.now() - (config._startTime || Date.now()),
+          payload: parsedPayload,
+          ipAddress: '—',
+          userAgent: navigator.userAgent.substring(0, 80),
+          companyId: JSON.parse(localStorage.getItem('cms_company') || 'null')?.id || null
+        })
+      }
+    } catch {
+      // Audit errors must never propagate
+    }
+
+    return response.data
+  },
   (error) => {
+    // ── Audit (error) ──
+    try {
+      const config = error.config
+      if (isClient && config) {
+        const method = config.method?.toUpperCase() || 'GET'
+        const url = config.url || ''
+
+        if (shouldAudit(method, url)) {
+          const user = JSON.parse(localStorage.getItem('cms_user') || 'null')
+          const rawPayload = config.data
+          let parsedPayload = rawPayload
+          if (typeof rawPayload === 'string') {
+            try { parsedPayload = JSON.parse(rawPayload) } catch { parsedPayload = rawPayload }
+          }
+
+          sendAuditEntry({
+            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            userId: user?.id || user?.Id || 'anonymous',
+            userName: user?.fullName || user?.firstName || user?.email || 'Sistema',
+            userAvatar: null,
+            action: inferAction(method, url),
+            entity: inferEntity(url),
+            entityId: null,
+            description: `${method} ${url}`,
+            endpoint: url,
+            method,
+            statusCode: error.response?.status,
+            responseTimeMs: Date.now() - (config._startTime || Date.now()),
+            payload: parsedPayload,
+            ipAddress: '—',
+            userAgent: navigator.userAgent.substring(0, 80),
+            companyId: JSON.parse(localStorage.getItem('cms_company') || 'null')?.id || null
+          })
+        }
+      }
+    } catch {
+      // Audit errors must never propagate
+    }
+
+    // ── Original error handling ──
     const status = error.response?.status
     const data = error.response?.data
     const requestUrl = error.config?.url || ''

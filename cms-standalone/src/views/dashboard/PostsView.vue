@@ -57,6 +57,15 @@
             <div class="status-pills">
               <button v-for="opt in statusOptions" :key="opt.value" class="status-pill" :class="{ active: filterStatus === opt.value }" @click="filterStatus = opt.value">{{ opt.label }}</button>
             </div>
+            <!-- 2a: Workflow filter -->
+            <select v-model="filterWorkflow" class="filter-select">
+              <option value="">Todos los estados</option>
+              <option value="draft">Borrador</option>
+              <option value="pending_review">En revisión</option>
+              <option value="approved">Aprobado</option>
+              <option value="scheduled">Programado</option>
+              <option value="archived">Archivado</option>
+            </select>
             <select v-model="pageSize" class="filter-select filter-select--sm">
               <option :value="6">6 / pág.</option>
               <option :value="12">12 / pág.</option>
@@ -107,6 +116,10 @@
                     <span class="status-badge" :class="post.visible ? 'status-badge--published' : 'status-badge--hidden'">
                       <span class="status-badge__dot"></span>
                       {{ post.visible ? 'Publicada' : 'Oculta' }}
+                    </span>
+                    <!-- 2a: Workflow status badge -->
+                    <span class="workflow-badge" :class="`workflow-badge--${post.workflowStatus || 'draft'}`">
+                      {{ workflowLabel(post.workflowStatus) }}
                     </span>
                     <span v-if="getPrimaryCategory(post)" class="cat-badge" :style="{ '--cat-color': getPrimaryCategory(post)?.color || '#2563eb' }">{{ getPrimaryCategory(post)?.name }}</span>
                     <span v-else class="cat-badge cat-badge--empty">Sin categoría</span>
@@ -194,10 +207,10 @@
       </div>
     </div>
 
-    <!-- Modal crear/editar -->
+    <!-- ===== Modal crear/editar ===== -->
     <div class="modal fade" id="postModal" tabindex="-1" ref="postModalRef">
       <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-        <div class="modal-content bsw-modal">
+        <div class="modal-content bsw-modal" style="position:relative;overflow:visible;">
           <div class="bsw-modal__header">
             <div class="bsw-modal__header-left">
               <div class="bsw-modal__header-icon">
@@ -205,127 +218,243 @@
               </div>
               <div>
                 <h2 class="bsw-modal__title">{{ editingPost ? 'Editar publicación' : 'Nueva publicación' }}</h2>
-                <p class="bsw-modal__sub">Contenido principal, SEO, categorías e imágenes</p>
+                <!-- 2c: Autosave indicator -->
+                <div class="autosave-indicator">
+                  <template v-if="autoSaveStatus === 'saving'">
+                    <span class="autosave-dot autosave-dot--saving"></span>
+                    <span class="autosave-text autosave-text--saving">Guardando...</span>
+                  </template>
+                  <template v-else-if="autoSaveStatus === 'saved'">
+                    <span class="autosave-dot autosave-dot--saved"></span>
+                    <span class="autosave-text autosave-text--saved">✓ Guardado automáticamente hace {{ autoSavedSecondsAgo }} seg</span>
+                  </template>
+                  <template v-else>
+                    <p class="bsw-modal__sub">Contenido principal, SEO, categorías e imágenes</p>
+                  </template>
+                </div>
               </div>
             </div>
-            <button type="button" class="bsw-modal__close" data-bs-dismiss="modal" aria-label="Cerrar">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </button>
+            <div class="bsw-modal__header-right">
+              <!-- 2d: History button -->
+              <button type="button" class="btn-ghost btn-ghost--sm history-btn" @click="showHistory = !showHistory" :class="{ 'history-btn--active': showHistory }" title="Historial de versiones">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 4v3l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Historial
+              </button>
+              <button type="button" class="bsw-modal__close" data-bs-dismiss="modal" aria-label="Cerrar">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </button>
+            </div>
           </div>
 
-          <div class="modal-body bsw-modal__body">
-            <form @submit.prevent="savePost">
-              <div class="modal-grid">
-                <div class="modal-grid__main">
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">Contenido</span></div>
-                    <div class="form-group">
-                      <label class="field-label">Título <span class="field-required">*</span></label>
-                      <input v-model.trim="postForm.title" type="text" class="field-input" required placeholder="Título de la publicación">
-                    </div>
-                    <div class="form-group">
-                      <label class="field-label">Resumen / Extracto <span class="field-required">*</span></label>
-                      <textarea v-model.trim="postForm.excerpt" class="field-input field-textarea" rows="3" required placeholder="Breve descripción..."></textarea>
-                    </div>
-                    <div class="form-group">
-                      <label class="field-label">Contenido</label>
-                      <div class="quill-wrapper">
-                        <QuillEditor v-model:content="postForm.content" contentType="html" theme="snow" :options="quillOptions" style="min-height:240px;" />
-                      </div>
-                    </div>
-                    <div class="form-row">
+          <!-- Modal body wrapper with history drawer -->
+          <div class="modal-body-wrapper" style="position:relative;overflow:hidden;">
+            <div class="modal-body bsw-modal__body">
+              <form @submit.prevent="savePost">
+                <div class="modal-grid">
+                  <div class="modal-grid__main">
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">Contenido</span></div>
                       <div class="form-group">
-                        <label class="field-label">URL de video</label>
-                        <input v-model.trim="postForm.videoUrl" type="url" class="field-input" placeholder="https://youtube.com/watch?v=...">
+                        <label class="field-label">Título <span class="field-required">*</span></label>
+                        <input v-model.trim="postForm.title" type="text" class="field-input" required placeholder="Título de la publicación">
                       </div>
                       <div class="form-group">
-                        <label class="field-label">URL canónica</label>
-                        <input v-model.trim="postForm.seo.canonicalUrl" type="url" class="field-input" placeholder="https://...">
+                        <label class="field-label">Resumen / Extracto <span class="field-required">*</span></label>
+                        <textarea v-model.trim="postForm.excerpt" class="field-input field-textarea" rows="3" required placeholder="Breve descripción..."></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label class="field-label">Contenido</label>
+                        <div class="quill-wrapper">
+                          <QuillEditor v-model:content="postForm.content" contentType="html" theme="snow" :options="quillOptions" style="min-height:240px;" />
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="field-label">URL de video</label>
+                          <input v-model.trim="postForm.videoUrl" type="url" class="field-input" placeholder="https://youtube.com/watch?v=...">
+                        </div>
+                        <div class="form-group">
+                          <label class="field-label">URL canónica</label>
+                          <input v-model.trim="postForm.seo.canonicalUrl" type="url" class="field-input" placeholder="https://...">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">SEO</span><span class="form-section__badge">Opcional</span></div>
+                      <div class="form-group">
+                        <label class="field-label">Meta título</label>
+                        <input v-model.trim="postForm.seo.metaTitle" type="text" class="field-input" maxlength="60" placeholder="Máximo 60 caracteres">
+                        <div class="field-hint"><span :class="{ 'field-hint--warn': postForm.seo.metaTitle.length > 50 }">{{ postForm.seo.metaTitle.length }}/60</span></div>
+                      </div>
+                      <div class="form-group">
+                        <label class="field-label">Meta descripción</label>
+                        <textarea v-model.trim="postForm.seo.metaDescription" class="field-input field-textarea" rows="3" maxlength="160" placeholder="Máximo 160 caracteres"></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label class="field-label">Keywords</label>
+                        <input v-model.trim="seoKeywordsInput" type="text" class="field-input" placeholder="palabra1, palabra2 (separadas por comas)">
+                      </div>
+                    </div>
+
+                    <!-- 2b: Workflow section -->
+                    <div class="form-section workflow-section">
+                      <div class="form-section__header">
+                        <span class="form-section__label">Workflow editorial</span>
+                      </div>
+                      <div class="workflow-current">
+                        <span class="workflow-badge" :class="`workflow-badge--${postForm.workflowStatus || 'draft'}`">
+                          {{ workflowLabel(postForm.workflowStatus) }}
+                        </span>
+                        <span class="workflow-status-hint">Estado actual</span>
+                      </div>
+                      <div class="workflow-actions">
+                        <!-- draft → pending_review -->
+                        <template v-if="postForm.workflowStatus === 'draft'">
+                          <button type="button" class="wf-btn wf-btn--review" @click="setWorkflow('pending_review')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.5h5M7 4.5l2 2-2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Enviar a revisión
+                          </button>
+                        </template>
+                        <!-- pending_review → approved / back to draft -->
+                        <template v-else-if="postForm.workflowStatus === 'pending_review'">
+                          <button type="button" class="wf-btn wf-btn--approve" @click="setWorkflow('approved')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.5l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Aprobar
+                          </button>
+                          <button type="button" class="wf-btn wf-btn--reject" @click="setWorkflow('draft')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.5h5M7.5 4.5l-2 2 2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Rechazar
+                          </button>
+                        </template>
+                        <!-- approved → published / scheduled -->
+                        <template v-else-if="postForm.workflowStatus === 'approved'">
+                          <button type="button" class="wf-btn wf-btn--publish" @click="setWorkflow('published')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v8M3.5 4l3-2.5L10 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 11.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            Publicar ahora
+                          </button>
+                          <div class="wf-schedule-group">
+                            <button type="button" class="wf-btn wf-btn--schedule" @click="showScheduleInput = !showScheduleInput">
+                              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 4v2.5l1.5 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                              Programar
+                            </button>
+                            <div v-if="showScheduleInput" class="wf-schedule-input-row">
+                              <input v-model="scheduleDate" type="datetime-local" class="field-input field-input--sm">
+                              <button type="button" class="wf-btn wf-btn--approve" @click="confirmSchedule">Confirmar</button>
+                            </div>
+                          </div>
+                        </template>
+                        <!-- published → archived -->
+                        <template v-else-if="postForm.workflowStatus === 'published'">
+                          <button type="button" class="wf-btn wf-btn--archive" @click="setWorkflow('archived')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1.5" y="4" width="10" height="7.5" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 4l1-2.5h8L11.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 7h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            Archivar
+                          </button>
+                        </template>
+                        <!-- archived → draft -->
+                        <template v-else-if="postForm.workflowStatus === 'archived'">
+                          <button type="button" class="wf-btn wf-btn--restore" @click="setWorkflow('draft')">
+                            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5A4.5 4.5 0 1 1 6.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 2v4.5H6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Restaurar como borrador
+                          </button>
+                        </template>
                       </div>
                     </div>
                   </div>
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">SEO</span><span class="form-section__badge">Opcional</span></div>
-                    <div class="form-group">
-                      <label class="field-label">Meta título</label>
-                      <input v-model.trim="postForm.seo.metaTitle" type="text" class="field-input" maxlength="60" placeholder="Máximo 60 caracteres">
-                      <div class="field-hint"><span :class="{ 'field-hint--warn': postForm.seo.metaTitle.length > 50 }">{{ postForm.seo.metaTitle.length }}/60</span></div>
+
+                  <div class="modal-grid__sidebar">
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">Imagen destacada</span></div>
+                      <div class="img-preview-box" :class="{ 'img-preview-box--filled': postForm.featuredImage }">
+                        <img v-if="postForm.featuredImage" :src="postForm.featuredImage" alt="Imagen destacada" class="img-preview-box__img">
+                        <div v-else class="img-preview-box__placeholder">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.4"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          <span>Sin imagen</span>
+                        </div>
+                      </div>
+                      <div class="form-group" style="margin-top:10px">
+                        <input v-model.trim="postForm.featuredImage" type="url" class="field-input" placeholder="URL de imagen">
+                      </div>
+                      <label class="file-upload-label">
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3.5 4L6.5 1l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10.5h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        {{ uploadingMedia ? 'Subiendo...' : 'Cargar desde archivo' }}
+                        <input type="file" accept="image/*" class="sr-only" @change="handleImageUpload($event, 'featured')" :disabled="uploadingMedia">
+                      </label>
                     </div>
-                    <div class="form-group">
-                      <label class="field-label">Meta descripción</label>
-                      <textarea v-model.trim="postForm.seo.metaDescription" class="field-input field-textarea" rows="3" maxlength="160" placeholder="Máximo 160 caracteres"></textarea>
+
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">Estado</span></div>
+                      <div class="toggle-row">
+                        <label class="toggle-row__label" for="visible">Visible en el sitio</label>
+                        <div class="bsw-toggle">
+                          <input id="visible" v-model="postForm.visible" type="checkbox" class="bsw-toggle__input">
+                          <span class="bsw-toggle__track"><span class="bsw-toggle__thumb"></span></span>
+                        </div>
+                      </div>
+                      <div class="form-group" style="margin-top:12px">
+                        <label class="field-label">Fecha de publicación</label>
+                        <input v-model="postForm.publishedAt" type="datetime-local" class="field-input">
+                      </div>
                     </div>
-                    <div class="form-group">
-                      <label class="field-label">Keywords</label>
-                      <input v-model.trim="seoKeywordsInput" type="text" class="field-input" placeholder="palabra1, palabra2 (separadas por comas)">
+
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">Categorías</span></div>
+                      <div class="categories-list">
+                        <label v-for="cat in categories" :key="cat._id" class="cat-check" :for="`cat-${cat._id}`">
+                          <div class="cat-check__left">
+                            <span class="cat-check__dot" :style="{ background: cat.color || '#2563eb' }"></span>
+                            <span class="cat-check__name">{{ cat.name }}</span>
+                          </div>
+                          <input class="cat-check__input" type="checkbox" :id="`cat-${cat._id}`" :value="cat._id" v-model="postForm.categories">
+                          <span class="cat-check__box"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="form-section">
+                      <div class="form-section__header"><span class="form-section__label">Etiquetas</span></div>
+                      <input v-model.trim="tagsInput" type="text" class="field-input" placeholder="tag1, tag2, tag3 (separadas por comas)">
+                      <div class="tags-container" v-if="postForm.tags.length">
+                        <span v-for="tag in postForm.tags" :key="tag" class="tag-pill">
+                          {{ tag }}
+                          <button type="button" class="tag-pill__remove" @click="removeTag(tag)">
+                            <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                          </button>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </form>
+            </div>
 
-                <div class="modal-grid__sidebar">
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">Imagen destacada</span></div>
-                    <div class="img-preview-box" :class="{ 'img-preview-box--filled': postForm.featuredImage }">
-                      <img v-if="postForm.featuredImage" :src="postForm.featuredImage" alt="Imagen destacada" class="img-preview-box__img">
-                      <div v-else class="img-preview-box__placeholder">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.4"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span>Sin imagen</span>
-                      </div>
-                    </div>
-                    <div class="form-group" style="margin-top:10px">
-                      <input v-model.trim="postForm.featuredImage" type="url" class="field-input" placeholder="URL de imagen">
-                    </div>
-                    <label class="file-upload-label">
-                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3.5 4L6.5 1l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10.5h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                      {{ uploadingMedia ? 'Subiendo...' : 'Cargar desde archivo' }}
-                      <input type="file" accept="image/*" class="sr-only" @change="handleImageUpload($event, 'featured')" :disabled="uploadingMedia">
-                    </label>
-                  </div>
-
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">Estado</span></div>
-                    <div class="toggle-row">
-                      <label class="toggle-row__label" for="visible">Visible en el sitio</label>
-                      <div class="bsw-toggle">
-                        <input id="visible" v-model="postForm.visible" type="checkbox" class="bsw-toggle__input">
-                        <span class="bsw-toggle__track"><span class="bsw-toggle__thumb"></span></span>
-                      </div>
-                    </div>
-                    <div class="form-group" style="margin-top:12px">
-                      <label class="field-label">Fecha de publicación</label>
-                      <input v-model="postForm.publishedAt" type="datetime-local" class="field-input">
+            <!-- 2d: Version history drawer -->
+            <Transition name="history-slide">
+              <div v-if="showHistory" class="history-drawer">
+                <div class="history-drawer__header">
+                  <span class="history-drawer__title">Historial de versiones</span>
+                  <button class="history-drawer__close" @click="showHistory = false" aria-label="Cerrar">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+                <div class="history-drawer__list">
+                  <div class="history-item history-item--current">
+                    <div class="history-item__dot history-item__dot--current"></div>
+                    <div class="history-item__content">
+                      <span class="history-item__label">Versión actual</span>
+                      <span class="history-item__user">En edición</span>
                     </div>
                   </div>
-
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">Categorías</span></div>
-                    <div class="categories-list">
-                      <label v-for="cat in categories" :key="cat._id" class="cat-check" :for="`cat-${cat._id}`">
-                        <div class="cat-check__left">
-                          <span class="cat-check__dot" :style="{ background: cat.color || '#2563eb' }"></span>
-                          <span class="cat-check__name">{{ cat.name }}</span>
-                        </div>
-                        <input class="cat-check__input" type="checkbox" :id="`cat-${cat._id}`" :value="cat._id" v-model="postForm.categories">
-                        <span class="cat-check__box"></span>
-                      </label>
+                  <div v-for="version in mockVersions" :key="version.id" class="history-item">
+                    <div class="history-item__dot"></div>
+                    <div class="history-item__content">
+                      <span class="history-item__label">{{ version.timestamp }}</span>
+                      <span class="history-item__user">{{ version.user }}</span>
                     </div>
-                  </div>
-
-                  <div class="form-section">
-                    <div class="form-section__header"><span class="form-section__label">Etiquetas</span></div>
-                    <input v-model.trim="tagsInput" type="text" class="field-input" placeholder="tag1, tag2, tag3 (separadas por comas)">
-                    <div class="tags-container" v-if="postForm.tags.length">
-                      <span v-for="tag in postForm.tags" :key="tag" class="tag-pill">
-                        {{ tag }}
-                        <button type="button" class="tag-pill__remove" @click="removeTag(tag)">
-                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-                        </button>
-                      </span>
-                    </div>
+                    <button class="history-item__restore" @click="restoreVersion(version)">Restaurar</button>
                   </div>
                 </div>
               </div>
-            </form>
+            </Transition>
           </div>
 
           <div class="bsw-modal__footer">
@@ -367,13 +496,14 @@ const canUseBuilder = computed(() => authStore.hasPermission('pagebuilder.edit')
 
 const { posts, categories, pagination, overview, loadingPosts, savingPost, uploadingMedia } = storeToRefs(cmsStore)
 
-const searchQuery   = ref('')
+const searchQuery    = ref('')
 const filterCategory = ref('')
-const filterStatus  = ref('all')
-const pageSize      = ref(12)
-const editingPost   = ref(null)
+const filterStatus   = ref('all')
+const filterWorkflow = ref('')        // 2a
+const pageSize       = ref(12)
+const editingPost    = ref(null)
 const deletingPostItem = ref(null)
-const tagsInput     = ref('')
+const tagsInput      = ref('')
 const seoKeywordsInput = ref('')
 
 const postModalRef = ref(null)
@@ -382,10 +512,63 @@ const overviewChartRef = ref(null)
 let overviewChart = null
 let filterTimer = null
 
+// ---- 2c: Autosave ----
+const autoSaveStatus   = ref(null)   // null | 'saving' | 'saved'
+const autoSavedAt      = ref(null)   // Date
+let autoSaveTimer      = null
+
+const autoSavedSecondsAgo = computed(() => {
+  if (!autoSavedAt.value) return 0
+  return Math.round((Date.now() - autoSavedAt.value) / 1000)
+})
+
+// ---- 2d: History ----
+const showHistory = ref(false)
+const mockVersions = [
+  { id: 1, timestamp: 'Hace 5 min',    user: 'Juan García' },
+  { id: 2, timestamp: 'Hace 2 horas',  user: 'María López' },
+  { id: 3, timestamp: 'Ayer 3:45 PM',  user: 'Auto-guardado' },
+]
+
+const restoreVersion = (version) => {
+  notify.info(`Versión restaurada: ${version.timestamp} — ${version.user}`)
+  showHistory.value = false
+}
+
+// ---- 2b: Workflow ----
+const showScheduleInput = ref(false)
+const scheduleDate = ref('')
+
+const workflowLabel = (status) => {
+  const map = {
+    draft:          'Borrador',
+    pending_review: 'En revisión',
+    approved:       'Aprobado',
+    published:      'Publicado',
+    scheduled:      'Programado',
+    archived:       'Archivado',
+  }
+  return map[status] || 'Borrador'
+}
+
+const setWorkflow = (newStatus) => {
+  postForm.value.workflowStatus = newStatus
+  showScheduleInput.value = false
+}
+
+const confirmSchedule = () => {
+  if (!scheduleDate.value) { notify.error('Selecciona una fecha y hora.'); return }
+  postForm.value.workflowStatus = 'scheduled'
+  postForm.value.publishedAt = scheduleDate.value
+  showScheduleInput.value = false
+  notify.success('Publicación programada.')
+}
+
+// ---- Status options ----
 const statusOptions = [
-  { value: 'all', label: 'Todas' },
+  { value: 'all',     label: 'Todas' },
   { value: 'visible', label: 'Publicadas' },
-  { value: 'hidden', label: 'Ocultas' }
+  { value: 'hidden',  label: 'Ocultas' }
 ]
 
 const quillOptions = {
@@ -401,17 +584,22 @@ const quillOptions = {
 }
 
 const createDefaultSeo = () => ({ metaTitle:'', metaDescription:'', metaKeywords:[], canonicalUrl:'', ogImage:'' })
+
 const defaultPostForm = () => ({
   title:'', excerpt:'', content:'', featuredImage:'', images:[], videoUrl:'',
   categories:[], tags:[], visible:true, author:'',
-  publishedAt: new Date().toISOString().slice(0,16), seo: createDefaultSeo()
+  publishedAt: new Date().toISOString().slice(0,16),
+  seo: createDefaultSeo(),
+  workflowStatus: 'draft',   // 2a
 })
+
 const postForm = ref(defaultPostForm())
 
 const parseCommaList = (v) => v ? v.split(',').map(s => s.trim()).filter(Boolean) : []
 
 const clearFilters = () => {
-  searchQuery.value = ''; filterCategory.value = ''; filterStatus.value = 'all'; pageSize.value = 12
+  searchQuery.value = ''; filterCategory.value = ''; filterStatus.value = 'all'
+  filterWorkflow.value = ''; pageSize.value = 12
 }
 
 const getPrimaryCategory = (post) => {
@@ -421,13 +609,15 @@ const getPrimaryCategory = (post) => {
   return categories.value.find(c => c._id === first) || null
 }
 
+// 2a: normalize workflowStatus when building form from existing post
 const createFormFromPost = (post = {}) => ({
   ...defaultPostForm(), ...post,
   images: Array.isArray(post.images) ? [...post.images] : [],
   tags: Array.isArray(post.tags) ? [...post.tags] : [],
   categories: post.categories?.map(c => typeof c === 'object' ? c._id : c) || [],
   publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0,16) : new Date().toISOString().slice(0,16),
-  seo: { ...createDefaultSeo(), ...(post.seo || {}) }
+  seo: { ...createDefaultSeo(), ...(post.seo || {}) },
+  workflowStatus: post.workflowStatus || (post.visible ? 'published' : 'draft'),
 })
 
 const openPostModal = async (post = null, action = '') => {
@@ -437,6 +627,13 @@ const openPostModal = async (post = null, action = '') => {
   postForm.value = post ? createFormFromPost(post) : defaultPostForm()
   tagsInput.value = postForm.value.tags.join(', ')
   seoKeywordsInput.value = (postForm.value.seo.metaKeywords || []).join(', ')
+  // Reset autosave & history state
+  autoSaveStatus.value = null
+  autoSavedAt.value = null
+  clearTimeout(autoSaveTimer)
+  showHistory.value = false
+  showScheduleInput.value = false
+  scheduleDate.value = ''
   postModal?.show()
 }
 
@@ -468,6 +665,7 @@ const loadPosts = async (page = 1) => {
       search: searchQuery.value || undefined,
       category: filterCategory.value || undefined,
       visible: filterStatus.value === 'all' ? undefined : filterStatus.value === 'visible',
+      workflowStatus: filterWorkflow.value || undefined,   // 2a
       page, limit: pageSize.value
     })
   } catch (error) { notify.error(error) }
@@ -486,6 +684,7 @@ const savePost = async () => {
       notify.success('La publicación fue creada correctamente.')
     }
     postModal?.hide()
+    autoSaveStatus.value = null
     await cmsStore.fetchOverview()
     await loadPosts(pagination.value.page || 1)
   } catch (error) { notify.error(error) }
@@ -586,7 +785,8 @@ const updateOverviewChart = () => {
   ]}]})
 }
 
-watch([searchQuery, filterCategory, filterStatus, pageSize], () => {
+// ---- Watchers ----
+watch([searchQuery, filterCategory, filterStatus, filterWorkflow, pageSize], () => {
   clearTimeout(filterTimer)
   filterTimer = setTimeout(() => loadPosts(1), 300)
 })
@@ -594,9 +794,30 @@ watch(() => [overview.value.published, overview.value.hidden], () => { nextTick(
 watch(tagsInput, (val) => { postForm.value.tags = parseCommaList(val) })
 watch(seoKeywordsInput, (val) => { postForm.value.seo.metaKeywords = parseCommaList(val) })
 
+// 2c: Autosave — watch for changes deep in postForm
+watch(postForm, () => {
+  // mark that content changed
+  clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(() => {
+    autoSaveStatus.value = 'saving'
+    setTimeout(() => {
+      autoSaveStatus.value = 'saved'
+      autoSavedAt.value = Date.now()
+    }, 800)
+  }, 3000)
+}, { deep: true })
+
+// ---- Lifecycle ----
 onMounted(async () => {
   const { Modal } = await import('bootstrap')
   postModal = new Modal(postModalRef.value)
+  // Reset autosave when modal closes
+  postModalRef.value.addEventListener('hidden.bs.modal', () => {
+    autoSaveStatus.value = null
+    autoSavedAt.value = null
+    clearTimeout(autoSaveTimer)
+    showHistory.value = false
+  })
   window.addEventListener('resize', () => overviewChart?.resize())
   await Promise.all([cmsStore.fetchCategories(), cmsStore.fetchOverview()])
   await loadPosts(1)
@@ -604,6 +825,7 @@ onMounted(async () => {
 })
 onBeforeUnmount(() => {
   clearTimeout(filterTimer)
+  clearTimeout(autoSaveTimer)
   if (overviewChart) { overviewChart.dispose(); overviewChart = null }
 })
 </script>
@@ -660,6 +882,23 @@ onBeforeUnmount(() => {
 .post-row__excerpt { font-size: 12.5px; color: var(--gray-500); margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .post-row__actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
+/* 2a: Workflow badges */
+.workflow-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.workflow-badge--draft          { background: var(--gray-100);       color: var(--gray-600); }
+.workflow-badge--pending_review { background: #fffbeb;               color: #b45309; }
+.workflow-badge--approved       { background: #eff6ff;               color: var(--primary-700); }
+.workflow-badge--published      { background: var(--success-50);     color: var(--success-700); }
+.workflow-badge--scheduled      { background: #f5f3ff;               color: #7c3aed; }
+.workflow-badge--archived       { background: var(--gray-900);       color: #fff; }
+
 .cat-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; background: color-mix(in srgb, var(--cat-color, #2563eb) 12%, transparent); color: var(--cat-color, #2563eb); }
 .cat-badge--empty { background: var(--gray-100); color: var(--gray-400); }
 
@@ -704,4 +943,193 @@ onBeforeUnmount(() => {
 .quill-wrapper { border: 1px solid var(--gray-200); border-radius: var(--radius-sm); overflow: hidden; }
 .quill-wrapper :deep(.ql-toolbar) { border: none; border-bottom: 1px solid var(--gray-200); padding: 8px 10px; background: var(--gray-50); }
 .quill-wrapper :deep(.ql-container) { border: none; font-family: var(--font-sans); font-size: 13.5px; }
+
+/* ---- Modal header right ---- */
+.bsw-modal__header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.history-btn { gap: 5px; }
+.history-btn--active { background: var(--primary-50); border-color: var(--primary-300); color: var(--primary-700); }
+
+/* ---- 2c: Autosave indicator ---- */
+.autosave-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 18px;
+}
+.autosave-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.autosave-dot--saving {
+  background: #f59e0b;
+  animation: pulse-amber 0.8s ease-in-out infinite;
+}
+.autosave-dot--saved { background: var(--success-600); }
+.autosave-text { font-size: 11.5px; font-weight: 500; }
+.autosave-text--saving { color: #b45309; }
+.autosave-text--saved  { color: var(--success-600); }
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ---- 2b: Workflow section ---- */
+.workflow-section { border-left: 3px solid var(--primary-700); }
+.workflow-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.workflow-status-hint {
+  font-size: 11.5px;
+  color: var(--gray-400);
+}
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.wf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.13s;
+  font-family: var(--font-sans);
+}
+.wf-btn--review  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.wf-btn--review:hover  { background: #fef3c7; }
+.wf-btn--approve { background: var(--primary-50); color: var(--primary-700); border-color: var(--primary-100); }
+.wf-btn--approve:hover { background: var(--primary-100); }
+.wf-btn--reject  { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.wf-btn--reject:hover  { background: #fee2e2; }
+.wf-btn--publish { background: var(--success-50); color: var(--success-700); border-color: var(--success-100); }
+.wf-btn--publish:hover { background: #dcfce7; }
+.wf-btn--schedule { background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; }
+.wf-btn--schedule:hover { background: #ede9fe; }
+.wf-btn--archive { background: var(--gray-100); color: var(--gray-700); border-color: var(--gray-200); }
+.wf-btn--archive:hover { background: var(--gray-200); }
+.wf-btn--restore { background: var(--gray-900); color: #fff; border-color: var(--gray-900); }
+.wf-btn--restore:hover { background: var(--gray-700); }
+.wf-schedule-group { display: flex; flex-direction: column; gap: 6px; }
+.wf-schedule-input-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.field-input--sm { padding: 6px 10px; font-size: 12.5px; }
+
+/* ---- 2d: History drawer ---- */
+.modal-body-wrapper {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.history-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  background: #fff;
+  border-left: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.07);
+}
+.history-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-100);
+  flex-shrink: 0;
+}
+.history-drawer__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.history-drawer__close {
+  width: 24px; height: 24px;
+  border-radius: 5px; border: 1px solid var(--gray-200);
+  background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gray-400); transition: all 0.13s;
+}
+.history-drawer__close:hover { background: var(--gray-50); color: var(--gray-700); }
+.history-drawer__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.history-item:last-child { border-bottom: none; }
+.history-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-300);
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.history-item__dot--current {
+  background: var(--primary-700);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+.history-item__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.history-item__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.history-item--current .history-item__label { color: var(--primary-700); }
+.history-item__user {
+  font-size: 11.5px;
+  color: var(--gray-400);
+}
+.history-item__restore {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--primary-700);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+}
+.history-item__restore:hover { color: var(--primary-800); }
+
+/* History drawer slide animation */
+.history-slide-enter-active, .history-slide-leave-active { transition: transform 0.25s ease, opacity 0.25s ease; }
+.history-slide-enter-from { transform: translateX(100%); opacity: 0; }
+.history-slide-leave-to   { transform: translateX(100%); opacity: 0; }
 </style>

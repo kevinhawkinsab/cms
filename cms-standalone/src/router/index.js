@@ -57,6 +57,41 @@ const routes = [
         name: 'Users',
         component: () => import('@/views/dashboard/UsersView.vue'),
         meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/dashboard/RolesView.vue'),
+        meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'companies',
+        name: 'Companies',
+        component: () => import('@/views/dashboard/CompaniesView.vue'),
+        meta: { permission: 'users.manage' }
+      },
+      {
+        path: 'audit-log',
+        name: 'AuditLog',
+        component: () => import('@/views/dashboard/AuditLogView.vue'),
+        meta: { permission: 'audit.read' }
+      },
+      {
+        path: 'seo',
+        name: 'Seo',
+        component: () => import('@/views/dashboard/SeoView.vue'),
+        meta: { permission: 'posts.edit' }
+      },
+      {
+        path: 'analytics',
+        name: 'Analytics',
+        component: () => import('@/views/dashboard/AnalyticsView.vue'),
+        meta: { permission: 'analytics.read' }
+      },
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/views/dashboard/NotificationsView.vue')
       }
     ]
   },
@@ -97,11 +132,12 @@ router.beforeEach(async (to, from) => {
   // Permission check
   const requiredPermission = to.meta.permission
   if (requiredPermission) {
-    const hasPermAny = authStore.hasAnyPermission(
-      requiredPermission.includes('.')
-        ? [requiredPermission, requiredPermission.replace(/\.\w+$/, '.read'), requiredPermission.replace(/\.\w+$/, '.create'), requiredPermission.replace(/\.\w+$/, '.edit')]
-        : [requiredPermission]
-    )
+    const perms = requiredPermission.includes('.')
+      ? [requiredPermission, requiredPermission.replace(/\.\w+$/, '.read'), requiredPermission.replace(/\.\w+$/, '.create'), requiredPermission.replace(/\.\w+$/, '.edit')]
+      : [requiredPermission]
+    const user = authStore.user
+    const isAdmin = user?.roles?.some(r => r === 'admin' || r?.name === 'admin')
+    const hasPermAny = isAdmin || authStore.hasAnyPermission(perms)
     if (!hasPermAny) {
       return {
         name: 'Dashboard',

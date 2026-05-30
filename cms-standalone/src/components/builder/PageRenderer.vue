@@ -39,6 +39,7 @@ import ContentImageBlock from './blocks/ContentImageBlock.vue'
 import BlogPreviewBlock from './blocks/BlogPreviewBlock.vue'
 import TeamBlock from './blocks/TeamBlock.vue'
 import TimelineBlock from './blocks/TimelineBlock.vue'
+import FormBuilderBlock from './blocks/FormBuilderBlock.vue'
 
 const props = defineProps({
   layout: { type: Object, default: null },
@@ -71,7 +72,8 @@ const blockComponentMap = {
   'content-image': ContentImageBlock,
   'blog-preview': BlogPreviewBlock,
   team: TeamBlock,
-  timeline: TimelineBlock
+  timeline: TimelineBlock,
+  form: FormBuilderBlock
 }
 
 function getBlockComponent(type) {
