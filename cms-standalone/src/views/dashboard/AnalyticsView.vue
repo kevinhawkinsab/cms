@@ -1,262 +1,612 @@
 <template>
   <div class="analytics-view">
+
+    <!-- Page header -->
     <div class="page-header">
       <div>
-        <h1 class="page-header__title">Analytics</h1>
-        <p class="page-header__desc">Resumen de actividad y rendimiento del contenido</p>
+        <h1 class="page-header__title">Analíticas</h1>
+        <p class="page-header__desc">Métricas de publicación, actividad del equipo y rendimiento del contenido.</p>
       </div>
       <div class="page-header__actions">
-        <select v-model="period" class="field-input" style="width:140px">
-          <option value="7">Últimos 7 días</option>
-          <option value="30">Últimos 30 días</option>
-          <option value="90">Últimos 90 días</option>
-        </select>
+        <!-- Date range selector -->
+        <div class="range-tabs">
+          <button
+            v-for="r in ranges"
+            :key="r.value"
+            class="range-tab"
+            :class="{ active: selectedRange === r.value }"
+            @click="selectRange(r.value)"
+          >{{ r.label }}</button>
+          <button class="range-tab" :class="{ active: selectedRange === 'custom' }" @click="selectedRange = 'custom'">
+            Personalizado
+          </button>
+        </div>
+        <template v-if="selectedRange === 'custom'">
+          <input v-model="customFrom" type="date" class="filter-date">
+          <span class="date-sep">→</span>
+          <input v-model="customTo" type="date" class="filter-date">
+        </template>
       </div>
     </div>
 
-    <!-- KPI row -->
+    <!-- Stats row -->
     <div class="stats-row">
       <div class="stat-chip">
-        <div class="stat-chip__icon blue"><i class="fas fa-eye"></i></div>
-        <div>
-          <div class="stat-chip__value">{{ kpis.views.toLocaleString() }}</div>
-          <div class="stat-chip__label">Vistas totales</div>
+        <div class="stat-chip__icon blue">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M4 7h6M4 4.5h6M4 9.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="stat-chip__info">
+          <span class="stat-chip__value">{{ currentStats.totalPublished }}</span>
+          <span class="stat-chip__label">Posts publicados</span>
         </div>
       </div>
       <div class="stat-chip">
-        <div class="stat-chip__icon green"><i class="fas fa-file-alt"></i></div>
-        <div>
-          <div class="stat-chip__value">{{ kpis.published }}</div>
-          <div class="stat-chip__label">Publicados</div>
+        <div class="stat-chip__icon green">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 10V5l5-3 5 3v5l-5 3-5-3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="stat-chip__info">
+          <span class="stat-chip__value">{{ currentStats.avgPerWeek }}</span>
+          <span class="stat-chip__label">Promedio por semana</span>
         </div>
       </div>
       <div class="stat-chip">
-        <div class="stat-chip__icon" style="background:rgba(139,92,246,.12);color:#7c3aed"><i class="fas fa-users"></i></div>
-        <div>
-          <div class="stat-chip__value">{{ kpis.authors }}</div>
-          <div class="stat-chip__label">Autores activos</div>
+        <div class="stat-chip__icon gray">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M2 12c0-2.485 2.015-4.5 5-4.5s5 2.015 5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="stat-chip__info">
+          <span class="stat-chip__value">{{ currentStats.topUser }}</span>
+          <span class="stat-chip__label">Colaborador más activo</span>
         </div>
       </div>
       <div class="stat-chip">
-        <div class="stat-chip__icon" style="background:rgba(245,158,11,.12);color:#d97706"><i class="fas fa-clock"></i></div>
-        <div>
-          <div class="stat-chip__value">{{ kpis.avgReadTime }}m</div>
-          <div class="stat-chip__label">Tiempo lectura avg</div>
+        <div class="stat-chip__icon dark">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 4h10M2 7h7M2 10h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <circle cx="11" cy="10" r="2" stroke="currentColor" stroke-width="1.2"/>
+          </svg>
+        </div>
+        <div class="stat-chip__info">
+          <span class="stat-chip__value">{{ currentStats.topCategory }}</span>
+          <span class="stat-chip__label">Categoría líder</span>
         </div>
       </div>
     </div>
 
-    <div class="analytics-grid">
-      <!-- Bar chart: views over time -->
-      <div class="analytics-card">
-        <div class="analytics-card__header">
-          <h3 class="analytics-card__title">Vistas por día</h3>
+    <!-- Charts row 1: Bar chart + Category bars -->
+    <div class="charts-row">
+
+      <!-- Chart 1: Publications over time (CSS bar chart) -->
+      <div class="chart-card chart-card--wide">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">Publicaciones por día</h3>
+          <span class="chart-card__sub">Últimos {{ selectedRange === '7' ? 7 : selectedRange === '30' ? 30 : 90 }} días</span>
         </div>
         <div class="bar-chart">
-          <div
-            v-for="(day, i) in chartData"
-            :key="i"
-            class="bar-chart__col"
-          >
-            <div class="bar-chart__bar-wrap">
-              <div
-                class="bar-chart__bar"
-                :style="{ height: (day.views / maxViews * 100) + '%' }"
-                :title="day.views + ' vistas'"
-              ></div>
+          <div class="bar-chart__bars">
+            <div
+              v-for="(day, i) in currentBarData"
+              :key="i"
+              class="bar-col"
+              :title="`${day.label}: ${day.count} publicaciones`"
+            >
+              <div class="bar-col__count" v-if="day.count > 0">{{ day.count }}</div>
+              <div class="bar-wrap">
+                <div
+                  class="bar-fill"
+                  :style="{ height: barHeight(day.count) + '%' }"
+                  :class="day.count > 0 ? 'bar-fill--active' : 'bar-fill--empty'"
+                ></div>
+              </div>
+              <div class="bar-col__label">{{ day.label }}</div>
             </div>
-            <div class="bar-chart__label">{{ day.label }}</div>
+          </div>
+          <div class="bar-chart__axis">
+            <span>{{ maxBarVal }}</span>
+            <span>{{ Math.floor(maxBarVal / 2) }}</span>
+            <span>0</span>
           </div>
         </div>
       </div>
 
-      <!-- Posts by category donut (CSS) -->
-      <div class="analytics-card">
-        <div class="analytics-card__header">
-          <h3 class="analytics-card__title">Por categoría</h3>
+      <!-- Chart 2: Posts by category (horizontal bars) -->
+      <div class="chart-card">
+        <div class="chart-card__header">
+          <h3 class="chart-card__title">Posts por categoría</h3>
         </div>
-        <div class="donut-section">
-          <div class="donut-visual">
-            <svg viewBox="0 0 80 80" width="140" height="140">
-              <circle cx="40" cy="40" r="30" fill="none" stroke="#e2e8f0" stroke-width="12"/>
-              <circle
-                v-for="(seg, i) in donutSegments"
-                :key="i"
-                cx="40" cy="40" r="30"
-                fill="none"
-                :stroke="seg.color"
-                stroke-width="12"
-                :stroke-dasharray="`${seg.dash} ${188.5 - seg.dash}`"
-                :stroke-dashoffset="seg.offset"
-                transform="rotate(-90 40 40)"
-              />
-            </svg>
-            <div class="donut-center">
-              <span class="donut-total">{{ categoryData.reduce((a,c)=>a+c.count,0) }}</span>
-              <span class="donut-sublabel">posts</span>
+        <div class="h-bars">
+          <div v-for="cat in categoryData" :key="cat.name" class="h-bar-row">
+            <div class="h-bar-row__label">{{ cat.name }}</div>
+            <div class="h-bar-row__track">
+              <div class="h-bar-row__fill" :style="{ width: hBarWidth(cat.count) + '%', background: cat.color }"></div>
             </div>
+            <div class="h-bar-row__count">{{ cat.count }}</div>
           </div>
-          <ul class="donut-legend">
-            <li v-for="(cat, i) in categoryData" :key="i" class="donut-legend__item">
-              <span class="donut-legend__dot" :style="{ background: cat.color }"></span>
-              <span class="donut-legend__name">{{ cat.name }}</span>
-              <span class="donut-legend__count">{{ cat.count }}</span>
-            </li>
-          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Chart 3: Content status breakdown -->
+    <div class="chart-card chart-card--full">
+      <div class="chart-card__header">
+        <h3 class="chart-card__title">Desglose de contenido por estado</h3>
+        <div class="status-legend">
+          <div v-for="s in statusBreakdown" :key="s.label" class="legend-item">
+            <div class="legend-dot" :style="{ background: s.color }"></div>
+            <span>{{ s.label }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div
+          v-for="s in statusBreakdown"
+          :key="s.label"
+          class="status-bar__seg"
+          :style="{ width: s.pct + '%', background: s.color }"
+          :title="`${s.label}: ${s.count} (${s.pct}%)`"
+        >
+          <span v-if="s.pct > 8" class="status-bar__seg-label">{{ s.pct }}%</span>
+        </div>
+      </div>
+      <div class="status-breakdown-nums">
+        <div v-for="s in statusBreakdown" :key="s.label" class="breakdown-num">
+          <div class="breakdown-num__dot" :style="{ background: s.color }"></div>
+          <div>
+            <div class="breakdown-num__val">{{ s.count }}</div>
+            <div class="breakdown-num__label">{{ s.label }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom tables -->
+    <div class="tables-row">
+
+      <!-- Team activity -->
+      <div class="table-card">
+        <div class="table-card__header">
+          <h3 class="table-card__title">Actividad del equipo</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th class="th-center">Creados</th>
+                <th class="th-center">Publicados</th>
+                <th>Última actividad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="member in teamActivity" :key="member.name">
+                <td>
+                  <div class="user-cell">
+                    <div class="user-cell__avatar" :style="{ background: avatarColor(member.name) }">
+                      {{ initials(member.name) }}
+                    </div>
+                    <span class="user-cell__name">{{ member.name }}</span>
+                  </div>
+                </td>
+                <td class="td-center">
+                  <span class="num-badge num-badge--blue">{{ member.created }}</span>
+                </td>
+                <td class="td-center">
+                  <span class="num-badge num-badge--green">{{ member.published }}</span>
+                </td>
+                <td class="td-date">{{ member.lastActivity }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
       <!-- Top posts -->
-      <div class="analytics-card">
-        <div class="analytics-card__header">
-          <h3 class="analytics-card__title">Top publicaciones</h3>
+      <div class="table-card">
+        <div class="table-card__header">
+          <h3 class="table-card__title">Top publicaciones</h3>
         </div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Título</th>
-              <th>Vistas</th>
-              <th>Tiempo avg</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(post, i) in topPosts" :key="post.id" class="data-table__row">
-              <td class="rank-cell">{{ i + 1 }}</td>
-              <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ post.title }}</td>
-              <td><strong>{{ post.views.toLocaleString() }}</strong></td>
-              <td>{{ post.readTime }}m</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Categoría</th>
+                <th class="th-center">Estado</th>
+                <th class="th-center">Vistas</th>
+                <th>Publicado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="post in topPosts" :key="post.id">
+                <td class="td-title">
+                  <span class="post-title" :title="post.title">{{ post.title }}</span>
+                </td>
+                <td>
+                  <span class="cat-badge" :style="{ background: post.catColor + '18', color: post.catColor }">{{ post.category }}</span>
+                </td>
+                <td class="td-center">
+                  <span class="status-pill" :class="statusClass(post.status)">{{ post.status }}</span>
+                </td>
+                <td class="td-center">
+                  <span class="views-val">{{ post.views.toLocaleString('es') }}</span>
+                </td>
+                <td class="td-date">{{ post.publishedAt }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- Team activity -->
-      <div class="analytics-card">
-        <div class="analytics-card__header">
-          <h3 class="analytics-card__title">Actividad del equipo</h3>
-        </div>
-        <div class="team-activity">
-          <div v-for="member in teamActivity" :key="member.name" class="team-activity__row">
-            <div class="team-activity__avatar">{{ member.name.charAt(0) }}</div>
-            <div class="team-activity__info">
-              <div class="team-activity__name">{{ member.name }}</div>
-              <div class="team-activity__sub">{{ member.role }}</div>
-            </div>
-            <div class="team-activity__stats">
-              <span class="team-activity__badge">{{ member.posts }} posts</span>
-              <span class="team-activity__badge gray">{{ member.edits }} ediciones</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 
-const period = ref('30')
+// --- Date range ---
+const ranges = [
+  { value: '7', label: '7 días' },
+  { value: '30', label: '30 días' },
+  { value: '90', label: '90 días' }
+]
+const selectedRange = ref('30')
+const customFrom = ref('')
+const customTo = ref('')
 
-const kpis = computed(() => ({
-  views: period.value === '7' ? 4821 : period.value === '30' ? 18340 : 52100,
-  published: period.value === '7' ? 3 : period.value === '30' ? 14 : 41,
-  authors: 5,
-  avgReadTime: 4
+const selectRange = (val) => { selectedRange.value = val }
+
+// --- Mock daily data sets ---
+const dailyData7 = [
+  { label: 'Lun', count: 2 },
+  { label: 'Mar', count: 0 },
+  { label: 'Mié', count: 3 },
+  { label: 'Jue', count: 1 },
+  { label: 'Vie', count: 4 },
+  { label: 'Sáb', count: 1 },
+  { label: 'Dom', count: 0 }
+]
+
+const dailyData30 = [
+  { label: '1', count: 1 }, { label: '2', count: 0 }, { label: '3', count: 3 }, { label: '4', count: 2 },
+  { label: '5', count: 4 }, { label: '6', count: 0 }, { label: '7', count: 2 }, { label: '8', count: 1 },
+  { label: '9', count: 3 }, { label: '10', count: 5 }, { label: '11', count: 2 }, { label: '12', count: 0 },
+  { label: '13', count: 1 }, { label: '14', count: 4 }, { label: '15', count: 2 }, { label: '16', count: 3 },
+  { label: '17', count: 6 }, { label: '18', count: 1 }, { label: '19', count: 0 }, { label: '20', count: 3 },
+  { label: '21', count: 2 }, { label: '22', count: 4 }, { label: '23', count: 1 }, { label: '24', count: 5 },
+  { label: '25', count: 3 }, { label: '26', count: 2 }, { label: '27', count: 0 }, { label: '28', count: 1 },
+  { label: '29', count: 4 }, { label: '30', count: 2 }
+]
+
+const dailyData90 = Array.from({ length: 90 }, (_, i) => ({
+  label: `${i + 1}`,
+  count: Math.floor(Math.random() * 5)
 }))
+// Deterministic seed for stable rendering
+const seededData90 = [
+  1,0,2,3,1,4,2,0,3,5,1,2,0,4,3,2,1,5,3,0,2,4,1,3,2,0,4,5,2,1,
+  3,2,4,0,1,5,3,2,0,4,2,1,3,5,4,0,2,3,1,4,2,5,0,3,2,1,4,3,0,5,
+  2,1,4,3,5,0,2,4,1,3,2,0,5,3,4,2,1,0,3,5,2,4,1,3,0,2,5,4,3,1
+].map((count, i) => ({ label: `${i + 1}`, count }))
 
-const days7 = [
-  { label: 'Lu', views: 420 }, { label: 'Ma', views: 680 }, { label: 'Mi', views: 510 },
-  { label: 'Ju', views: 890 }, { label: 'Vi', views: 1020 }, { label: 'Sá', views: 740 }, { label: 'Do', views: 561 }
-]
-const days30 = Array.from({ length: 10 }, (_, i) => ({ label: `S${i+1}`, views: 300 + Math.round(Math.random() * 1500) }))
-const days90 = Array.from({ length: 9 }, (_, i) => ({ label: `M${i+1}`, views: 1200 + Math.round(Math.random() * 5000) }))
-
-const chartData = computed(() => period.value === '7' ? days7 : period.value === '30' ? days30 : days90)
-const maxViews = computed(() => Math.max(...chartData.value.map(d => d.views)) || 1)
-
-const categoryData = [
-  { name: 'Tecnología', count: 18, color: '#2563eb' },
-  { name: 'Tutoriales', count: 12, color: '#16a34a' },
-  { name: 'Noticias', count: 7, color: '#d97706' },
-  { name: 'Otros', count: 4, color: '#94a3b8' },
-]
-
-const donutSegments = computed(() => {
-  const total = categoryData.reduce((a, c) => a + c.count, 0)
-  const circ = 188.5
-  let offset = 0
-  return categoryData.map(cat => {
-    const dash = (cat.count / total) * circ
-    const seg = { dash, offset: -offset, color: cat.color }
-    offset += dash
-    return seg
-  })
+const currentBarData = computed(() => {
+  if (selectedRange.value === '7') return dailyData7
+  if (selectedRange.value === '90') return seededData90
+  return dailyData30
 })
 
-const topPosts = [
-  { id: 1, title: 'Guía completa de Vue 3', views: 4821, readTime: 7 },
-  { id: 2, title: 'Primeros pasos con Pinia', views: 3210, readTime: 5 },
-  { id: 3, title: 'Vite vs Webpack en 2025', views: 2890, readTime: 6 },
-  { id: 4, title: 'CSS Custom Properties avanzado', views: 1943, readTime: 4 },
-  { id: 5, title: 'Accesibilidad web: guía práctica', views: 1542, readTime: 8 },
+const maxBarVal = computed(() => Math.max(...currentBarData.value.map(d => d.count), 1))
+
+const barHeight = (count) => {
+  if (!maxBarVal.value) return 0
+  return Math.round((count / maxBarVal.value) * 100)
+}
+
+// --- Stats per range ---
+const statsMap = {
+  '7':  { totalPublished: 11, avgPerWeek: 11, topUser: 'Ana G.', topCategory: 'Tecnología' },
+  '30': { totalPublished: 68, avgPerWeek: 17, topUser: 'Ana G.', topCategory: 'Noticias' },
+  '90': { totalPublished: 192, avgPerWeek: 15, topUser: 'Lucía T.', topCategory: 'Tecnología' }
+}
+const currentStats = computed(() => statsMap[selectedRange.value] || statsMap['30'])
+
+// --- Category data ---
+const categoryData = [
+  { name: 'Tecnología',     count: 38, color: '#2563eb' },
+  { name: 'Noticias',       count: 31, color: '#0891b2' },
+  { name: 'Sostenibilidad', count: 24, color: '#16a34a' },
+  { name: 'Finanzas',       count: 19, color: '#7c3aed' },
+  { name: 'Estrategia',     count: 14, color: '#ea580c' },
+  { name: 'Productos',      count: 10, color: '#db2777' },
 ]
 
+const maxCatCount = computed(() => Math.max(...categoryData.map(c => c.count)))
+const hBarWidth = (count) => Math.round((count / maxCatCount.value) * 100)
+
+// --- Status breakdown ---
+const statusBreakdown = computed(() => {
+  const total = 136
+  const items = [
+    { label: 'Publicados',      count: 82, color: '#16a34a' },
+    { label: 'Borradores',      count: 28, color: '#6b7280' },
+    { label: 'En revisión',     count: 17, color: '#d97706' },
+    { label: 'Archivados',      count: 9,  color: '#dc2626' }
+  ]
+  return items.map(i => ({ ...i, pct: Math.round((i.count / total) * 100) }))
+})
+
+// --- Team activity ---
 const teamActivity = [
-  { name: 'Ana García', role: 'Editora', posts: 6, edits: 14 },
-  { name: 'Carlos López', role: 'Redactor', posts: 4, edits: 8 },
-  { name: 'María Torres', role: 'Administradora', posts: 2, edits: 21 },
-  { name: 'Javier Ruiz', role: 'Colaborador', posts: 2, edits: 3 },
+  { name: 'Ana García',    created: 28, published: 24, lastActivity: '30 may 2026' },
+  { name: 'Lucía Torres',  created: 22, published: 19, lastActivity: '30 may 2026' },
+  { name: 'Carlos Méndez', created: 18, published: 14, lastActivity: '29 may 2026' },
+  { name: 'Roberto Silva', created: 11, published: 8,  lastActivity: '29 may 2026' },
+  { name: 'Mario Reyes',   created: 7,  published: 3,  lastActivity: '28 may 2026' },
 ]
+
+// --- Top posts ---
+const topPosts = [
+  { id: 1, title: 'Innovación y sostenibilidad: claves para el futuro',  category: 'Tecnología',     catColor: '#2563eb', status: 'Publicado', views: 4820, publishedAt: '15 may 2026' },
+  { id: 2, title: 'Resultados Q1 2026: crecimiento en todos los mercados', category: 'Finanzas',     catColor: '#7c3aed', status: 'Publicado', views: 3610, publishedAt: '10 may 2026' },
+  { id: 3, title: 'Lanzamiento de nuestro nuevo producto estrella',        category: 'Productos',    catColor: '#db2777', status: 'Publicado', views: 2940, publishedAt: '8 may 2026' },
+  { id: 4, title: 'Informe de sostenibilidad 2025',                        category: 'Sostenibilidad', catColor: '#16a34a', status: 'Publicado', views: 2110, publishedAt: '2 may 2026' },
+  { id: 5, title: 'Estrategia digital para empresas en 2026',              category: 'Estrategia',  catColor: '#ea580c', status: 'Publicado', views: 1780, publishedAt: '28 abr 2026' },
+  { id: 6, title: 'Premios excelencia 2025: reconocimientos del sector',   category: 'Noticias',    catColor: '#0891b2', status: 'Publicado', views: 1420, publishedAt: '20 abr 2026' },
+]
+
+// --- Helpers ---
+const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0891b2', '#65a30d']
+const avatarColor = (name = '') => {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+const initials = (name = '') => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?'
+
+const statusClass = (status) => {
+  if (status === 'Publicado') return 'status-pill--ok'
+  if (status === 'Revisión') return 'status-pill--review'
+  return 'status-pill--draft'
+}
 </script>
 
 <style scoped>
-.analytics-view { padding: 0; }
-.stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 24px; }
+.analytics-view {
+  padding: 32px 28px;
+  max-width: 1500px;
+  margin: 0 auto;
+  font-family: var(--font-sans);
+}
 
-.analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 900px) { .analytics-grid { grid-template-columns: 1fr; } }
+/* Page header */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; }
+.page-header__title { font-size: 22px; font-weight: 650; letter-spacing: -0.4px; color: var(--gray-900); margin: 0 0 5px; }
+.page-header__desc { font-size: 13.5px; color: var(--gray-400); margin: 0; }
+.page-header__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-.analytics-card { background: #fff; border-radius: var(--radius-md); border: 1px solid var(--gray-200); padding: 20px; }
-.analytics-card__header { margin-bottom: 16px; }
-.analytics-card__title { font-size: .9rem; font-weight: 700; color: var(--gray-900); margin: 0; }
+/* Range tabs */
+.range-tabs { display: flex; background: var(--gray-100); border-radius: 8px; padding: 3px; gap: 2px; }
+.range-tab {
+  padding: 5px 13px; border-radius: 6px; border: none;
+  background: transparent; color: var(--gray-600);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: var(--font-sans); transition: all 0.15s;
+}
+.range-tab.active { background: #fff; color: #2563eb; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.range-tab:hover:not(.active) { color: var(--gray-900); }
 
-/* Bar chart */
-.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 160px; padding-bottom: 24px; position: relative; }
-.bar-chart__col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; }
-.bar-chart__bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
-.bar-chart__bar { width: 100%; background: linear-gradient(180deg, #2563eb, #60a5fa); border-radius: 4px 4px 0 0; min-height: 4px; transition: height .4s ease; }
-.bar-chart__bar:hover { background: linear-gradient(180deg, #1d4ed8, #3b82f6); cursor: default; }
-.bar-chart__label { font-size: .68rem; color: var(--gray-400); margin-top: 6px; }
+.filter-date {
+  height: 34px; padding: 0 10px; border: 1px solid var(--gray-200); border-radius: 8px;
+  font-size: 12.5px; font-family: var(--font-sans); color: var(--gray-700);
+  background: var(--gray-50); outline: none;
+}
+.date-sep { font-size: 12px; color: var(--gray-400); }
 
-/* Donut */
-.donut-section { display: flex; align-items: center; gap: 20px; }
-.donut-visual { position: relative; }
-.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.donut-total { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); line-height: 1; }
-.donut-sublabel { font-size: .7rem; color: var(--gray-400); }
-.donut-legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.donut-legend__item { display: flex; align-items: center; gap: 8px; font-size: .82rem; }
-.donut-legend__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.donut-legend__name { flex: 1; color: var(--gray-700); }
-.donut-legend__count { font-weight: 700; color: var(--gray-900); }
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-chip { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-md); }
+.stat-chip__icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-chip__icon.blue  { background: #eff6ff; color: #2563eb; }
+.stat-chip__icon.green { background: #f0fdf4; color: #16a34a; }
+.stat-chip__icon.gray  { background: var(--gray-100); color: var(--gray-600); }
+.stat-chip__icon.dark  { background: var(--gray-900); color: #fff; }
+.stat-chip__info { display: flex; flex-direction: column; gap: 1px; }
+.stat-chip__value { font-size: 18px; font-weight: 700; line-height: 1.1; color: var(--gray-900); letter-spacing: -0.4px; }
+.stat-chip__label { font-size: 11.5px; color: var(--gray-400); font-weight: 500; }
 
-/* Table */
-.data-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-.data-table th { padding: 8px 12px; text-align: left; font-size: .72rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--gray-200); }
-.data-table td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
-.data-table__row:last-child td { border-bottom: none; }
-.rank-cell { font-weight: 700; color: var(--gray-400); width: 30px; }
+/* Charts row */
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
 
-/* Team activity */
-.team-activity { display: flex; flex-direction: column; gap: 12px; }
-.team-activity__row { display: flex; align-items: center; gap: 12px; }
-.team-activity__avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-700); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; flex-shrink: 0; }
-.team-activity__info { flex: 1; }
-.team-activity__name { font-weight: 600; font-size: .85rem; color: var(--gray-800); }
-.team-activity__sub { font-size: .75rem; color: var(--gray-400); }
-.team-activity__stats { display: flex; gap: 6px; }
-.team-activity__badge { font-size: .72rem; padding: 2px 8px; border-radius: 20px; background: rgba(37,99,235,.1); color: var(--primary-700); font-weight: 600; }
-.team-activity__badge.gray { background: var(--gray-100); color: var(--gray-500); }
+/* Chart card */
+.chart-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.chart-card--wide { }
+.chart-card--full { margin-bottom: 16px; }
+.chart-card__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.chart-card__title { font-size: 13.5px; font-weight: 650; color: var(--gray-900); margin: 0; }
+.chart-card__sub { font-size: 12px; color: var(--gray-400); }
+
+/* ── Chart 1: CSS Bar chart ── */
+.bar-chart { padding: 16px 18px 10px; display: flex; gap: 10px; }
+.bar-chart__bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  position: relative;
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+.bar-col__count {
+  font-size: 9px;
+  font-weight: 700;
+  color: #2563eb;
+  margin-bottom: 2px;
+  min-height: 12px;
+}
+.bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.bar-fill {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.4s ease;
+  min-height: 2px;
+}
+.bar-fill--active { background: linear-gradient(to top, #1d4ed8, #3b82f6); }
+.bar-fill--empty { background: var(--gray-100); min-height: 3px; }
+.bar-col__label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--gray-400);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.bar-chart__axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--gray-400);
+  font-weight: 500;
+  padding-bottom: 20px;
+  text-align: right;
+  width: 20px;
+}
+
+/* ── Chart 2: Horizontal bars ── */
+.h-bars { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.h-bar-row { display: flex; align-items: center; gap: 10px; }
+.h-bar-row__label { font-size: 12px; font-weight: 500; color: var(--gray-700); width: 90px; flex-shrink: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+.h-bar-row__track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 99px; overflow: hidden; }
+.h-bar-row__fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+.h-bar-row__count { font-size: 12px; font-weight: 700; color: var(--gray-700); width: 24px; text-align: right; flex-shrink: 0; }
+
+/* ── Chart 3: Status breakdown ── */
+.status-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--gray-600); font-weight: 500; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.status-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 14px 18px 0;
+}
+.status-bar__seg {
+  display: flex; align-items: center; justify-content: center;
+  transition: width 0.4s ease;
+  position: relative;
+}
+.status-bar__seg-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9); }
+
+.status-breakdown-nums {
+  display: flex; gap: 24px; padding: 14px 18px 16px;
+  flex-wrap: wrap;
+}
+.breakdown-num { display: flex; align-items: center; gap: 10px; }
+.breakdown-num__dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.breakdown-num__val { font-size: 18px; font-weight: 700; color: var(--gray-900); line-height: 1; }
+.breakdown-num__label { font-size: 11.5px; color: var(--gray-400); margin-top: 1px; }
+
+/* Tables row */
+.tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Table card */
+.table-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.table-card__header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.table-card__title { font-size: 13.5px; font-weight: 650; color: var(--gray-900); margin: 0; }
+
+.table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--gray-500); background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-100); white-space: nowrap;
+}
+.data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--gray-50);
+  vertical-align: middle;
+}
+.data-table tbody tr:hover td { background: var(--gray-50); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.th-center, .td-center { text-align: center; }
+
+/* User cell */
+.user-cell { display: flex; align-items: center; gap: 9px; }
+.user-cell__avatar {
+  width: 28px; height: 28px; border-radius: 50%; color: #fff;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.user-cell__name { font-weight: 500; font-size: 13px; color: var(--gray-900); }
+
+/* Number badges */
+.num-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; padding: 2px 8px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+}
+.num-badge--blue { background: #eff6ff; color: #2563eb; }
+.num-badge--green { background: #f0fdf4; color: #15803d; }
+
+.td-date { font-size: 12px; color: var(--gray-500); white-space: nowrap; }
+.td-title { max-width: 200px; }
+.post-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--gray-900); }
+
+.cat-badge { display: inline-flex; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.views-val { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+
+/* Status pills */
+.status-pill { display: inline-flex; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.status-pill--ok     { background: #dcfce7; color: #15803d; }
+.status-pill--review { background: #fef3c7; color: #92400e; }
+.status-pill--draft  { background: var(--gray-100); color: var(--gray-600); }
+
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .tables-row { grid-template-columns: 1fr; }
+}
 </style>
