@@ -37,9 +37,8 @@ const content = computed(() => props.block.content || {})
   padding: 40px 0;
 }
 .stats-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 16px;
 }
 .stat-item {
@@ -47,12 +46,10 @@ const content = computed(() => props.block.content || {})
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 28px 36px;
+  padding: 24px 20px;
   background: #fff;
-  border: 1px solid rgba(63,100,88,0.08);
-  border-radius: 20px;
-  min-width: 160px;
-  flex: 1;
+  border: 1px solid rgba(63,100,88,0.10);
+  border-radius: 16px;
 }
 .stat-placeholder { opacity: 0.4; border-style: dashed; }
 .stat-value {

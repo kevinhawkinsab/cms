@@ -35,6 +35,10 @@ import CtaBanner from './blocks/CtaBanner.vue'
 import AccordionBlock from './blocks/AccordionBlock.vue'
 import TableBlock from './blocks/TableBlock.vue'
 import TestimonialBlock from './blocks/TestimonialBlock.vue'
+import ContentImageBlock from './blocks/ContentImageBlock.vue'
+import BlogPreviewBlock from './blocks/BlogPreviewBlock.vue'
+import TeamBlock from './blocks/TeamBlock.vue'
+import TimelineBlock from './blocks/TimelineBlock.vue'
 
 const props = defineProps({
   layout: { type: Object, default: null },
@@ -63,7 +67,11 @@ const blockComponentMap = {
   'cta-banner': CtaBanner,
   accordion: AccordionBlock,
   table: TableBlock,
-  testimonial: TestimonialBlock
+  testimonial: TestimonialBlock,
+  'content-image': ContentImageBlock,
+  'blog-preview': BlogPreviewBlock,
+  team: TeamBlock,
+  timeline: TimelineBlock
 }
 
 function getBlockComponent(type) {

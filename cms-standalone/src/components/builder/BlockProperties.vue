@@ -654,6 +654,119 @@
         <button class="btn btn-sm prop-add-btn mt-1" @click="addTestimonialItem"><i class="fas fa-plus me-1"></i>Agregar testimonio</button>
       </template>
 
+      <!-- CONTENT-IMAGE -->
+      <template v-if="block.type === 'content-image'">
+        <div class="prop-group">
+          <label class="prop-label">Color de fondo</label>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="color" class="form-control form-control-color prop-color" :value="block.content.bgColor || '#f5f0eb'" @input="updateContent({ bgColor: $event.target.value })" />
+            <input class="form-control prop-input flex-grow-1" :value="block.content.bgColor || '#f5f0eb'" @input="updateContent({ bgColor: $event.target.value })" placeholder="#f5f0eb" />
+          </div>
+        </div>
+        <div class="prop-group">
+          <label class="prop-label">Posición imagen</label>
+          <select class="form-select prop-input" :value="block.content.imagePosition || 'right'" @change="updateContent({ imagePosition: $event.target.value })">
+            <option value="right">Derecha</option>
+            <option value="left">Izquierda</option>
+          </select>
+        </div>
+        <div class="prop-group"><label class="prop-label">Eyebrow</label><input class="form-control prop-input" :value="block.content.eyebrow" @input="updateContent({ eyebrow: $event.target.value })" placeholder="TEXTO SUPERIOR" /></div>
+        <div class="prop-group"><label class="prop-label">Título (H2)</label><input class="form-control prop-input" :value="block.content.heading" @input="updateContent({ heading: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Párrafo superior</label><textarea class="form-control prop-input" rows="3" :value="block.content.bodyTop" @input="updateContent({ bodyTop: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Párrafo inferior</label><textarea class="form-control prop-input" rows="3" :value="block.content.bodyBottom" @input="updateContent({ bodyBottom: $event.target.value })" /></div>
+        <h6 class="props-section-title">Mini-estadísticas ({{ (block.content.stats || []).length }})</h6>
+        <div v-for="(stat, i) in (block.content.stats || [])" :key="i" class="prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Stat {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeCiStat(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="stat.value" @input="updateCiStat(i, 'value', $event.target.value)" placeholder="175,000+" />
+          <input class="form-control prop-input prop-input-sm" :value="stat.label" @input="updateCiStat(i, 'label', $event.target.value)" placeholder="etiqueta" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addCiStat"><i class="fas fa-plus me-1"></i>Agregar stat</button>
+        <div class="props-divider"></div>
+        <h6 class="props-section-title">Imagen</h6>
+        <div class="prop-group"><label class="prop-label">URL imagen</label><input class="form-control prop-input" :value="block.content.image" @input="updateContent({ image: $event.target.value })" placeholder="https://..." /></div>
+        <div class="prop-group"><label class="prop-label">Alt texto</label><input class="form-control prop-input" :value="block.content.imageAlt" @input="updateContent({ imageAlt: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Badge etiqueta</label><input class="form-control prop-input" :value="block.content.badgeLabel" @input="updateContent({ badgeLabel: $event.target.value })" placeholder="ETIQUETA" /></div>
+        <div class="prop-group"><label class="prop-label">Badge texto</label><input class="form-control prop-input" :value="block.content.badgeText" @input="updateContent({ badgeText: $event.target.value })" /></div>
+      </template>
+
+      <!-- BLOG PREVIEW -->
+      <template v-if="block.type === 'blog-preview'">
+        <div class="prop-group"><label class="prop-label">Eyebrow</label><input class="form-control prop-input" :value="block.content.eyebrow" @input="updateContent({ eyebrow: $event.target.value })" placeholder="NUESTRO BLOG" /></div>
+        <div class="prop-group"><label class="prop-label">Título sección</label><input class="form-control prop-input" :value="block.content.title" @input="updateContent({ title: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Subtítulo</label><input class="form-control prop-input" :value="block.content.subtitle" @input="updateContent({ subtitle: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Texto botón CTA</label><input class="form-control prop-input" :value="block.content.ctaText" @input="updateContent({ ctaText: $event.target.value })" placeholder="Ver todos" /></div>
+        <div class="prop-group"><label class="prop-label">URL botón CTA</label><input class="form-control prop-input" :value="block.content.ctaUrl" @input="updateContent({ ctaUrl: $event.target.value })" placeholder="/blog" /></div>
+        <div class="prop-group">
+          <label class="prop-label">Columnas</label>
+          <select class="form-select prop-input" :value="block.content.columns || 3" @change="updateContent({ columns: Number($event.target.value) })">
+            <option value="2">2 columnas</option>
+            <option value="3">3 columnas</option>
+            <option value="4">4 columnas</option>
+          </select>
+        </div>
+        <h6 class="props-section-title">Artículos ({{ (block.content.posts || []).length }})</h6>
+        <div v-for="(post, i) in (block.content.posts || [])" :key="i" class="prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Artículo {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeBlogPost(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="post.title" @input="updateBlogPost(i, 'title', $event.target.value)" placeholder="Título" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="post.excerpt" @input="updateBlogPost(i, 'excerpt', $event.target.value)" placeholder="Resumen breve" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="post.image" @input="updateBlogPost(i, 'image', $event.target.value)" placeholder="URL imagen" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="post.category" @input="updateBlogPost(i, 'category', $event.target.value)" placeholder="Categoría" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="post.date" @input="updateBlogPost(i, 'date', $event.target.value)" placeholder="01 Ene 2025" />
+          <input class="form-control prop-input prop-input-sm" :value="post.url" @input="updateBlogPost(i, 'url', $event.target.value)" placeholder="URL del artículo" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addBlogPost"><i class="fas fa-plus me-1"></i>Agregar artículo</button>
+      </template>
+
+      <!-- TEAM -->
+      <template v-if="block.type === 'team'">
+        <div class="prop-group"><label class="prop-label">Eyebrow</label><input class="form-control prop-input" :value="block.content.eyebrow" @input="updateContent({ eyebrow: $event.target.value })" placeholder="NUESTRO EQUIPO" /></div>
+        <div class="prop-group"><label class="prop-label">Título</label><input class="form-control prop-input" :value="block.content.title" @input="updateContent({ title: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Subtítulo</label><input class="form-control prop-input" :value="block.content.subtitle" @input="updateContent({ subtitle: $event.target.value })" /></div>
+        <div class="prop-group">
+          <label class="prop-label">Columnas</label>
+          <select class="form-select prop-input" :value="block.content.columns || 4" @change="updateContent({ columns: Number($event.target.value) })">
+            <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+          </select>
+        </div>
+        <h6 class="props-section-title">Miembros ({{ (block.content.members || []).length }})</h6>
+        <div v-for="(m, i) in (block.content.members || [])" :key="i" class="prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Miembro {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeTeamMember(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="m.name" @input="updateTeamMember(i, 'name', $event.target.value)" placeholder="Nombre" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="m.role" @input="updateTeamMember(i, 'role', $event.target.value)" placeholder="Cargo" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="m.photo" @input="updateTeamMember(i, 'photo', $event.target.value)" placeholder="URL foto" />
+          <textarea class="form-control prop-input prop-input-sm mb-1" rows="2" :value="m.bio" @input="updateTeamMember(i, 'bio', $event.target.value)" placeholder="Biografía corta" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="m.linkedin" @input="updateTeamMember(i, 'linkedin', $event.target.value)" placeholder="LinkedIn URL" />
+          <input class="form-control prop-input prop-input-sm" :value="m.instagram" @input="updateTeamMember(i, 'instagram', $event.target.value)" placeholder="Instagram URL" />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addTeamMember"><i class="fas fa-plus me-1"></i>Agregar miembro</button>
+      </template>
+
+      <!-- TIMELINE -->
+      <template v-if="block.type === 'timeline'">
+        <div class="prop-group"><label class="prop-label">Eyebrow</label><input class="form-control prop-input" :value="block.content.eyebrow" @input="updateContent({ eyebrow: $event.target.value })" /></div>
+        <div class="prop-group"><label class="prop-label">Título</label><input class="form-control prop-input" :value="block.content.title" @input="updateContent({ title: $event.target.value })" /></div>
+        <h6 class="props-section-title">Eventos ({{ (block.content.items || []).length }})</h6>
+        <div v-for="(item, i) in (block.content.items || [])" :key="i" class="prop-item-group">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="prop-label mb-0">Evento {{ i + 1 }}</span>
+            <button class="prop-img-remove" @click="removeTimelineItem(i)"><i class="fas fa-times"></i></button>
+          </div>
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.year" @input="updateTimelineItem(i, 'year', $event.target.value)" placeholder="2020" />
+          <input class="form-control prop-input prop-input-sm mb-1" :value="item.title" @input="updateTimelineItem(i, 'title', $event.target.value)" placeholder="Nombre del evento" />
+          <textarea class="form-control prop-input prop-input-sm" rows="2" :value="item.description" @input="updateTimelineItem(i, 'description', $event.target.value)" placeholder="Descripción..." />
+        </div>
+        <button class="btn btn-sm prop-add-btn mt-1" @click="addTimelineItem"><i class="fas fa-plus me-1"></i>Agregar evento</button>
+      </template>
+
       <!-- COMMON STYLES -->
       <div class="props-divider"></div>
       <h6 class="props-section-title">Estilos</h6>
@@ -926,6 +1039,74 @@ function addFpTag() {
   if (!block.value) return
   const tags = [...(block.value.content?.tags || []), { text: 'Nuevo', color: '#80ba49' }]
   store.updateBlockContent(block.value.id, { tags })
+}
+
+// --- content-image stats ---
+function updateCiStat(index, field, value) {
+  if (!block.value) return
+  const stats = JSON.parse(JSON.stringify(block.value.content?.stats || []))
+  if (stats[index]) { stats[index][field] = value; store.updateBlockContent(block.value.id, { stats }) }
+}
+function removeCiStat(index) {
+  if (!block.value) return
+  const stats = (block.value.content?.stats || []).filter((_, i) => i !== index)
+  store.updateBlockContent(block.value.id, { stats })
+}
+function addCiStat() {
+  if (!block.value) return
+  const stats = [...(block.value.content?.stats || []), { value: '', label: '' }]
+  store.updateBlockContent(block.value.id, { stats })
+}
+
+// --- blog-preview posts ---
+function updateBlogPost(index, field, value) {
+  if (!block.value) return
+  const posts = JSON.parse(JSON.stringify(block.value.content?.posts || []))
+  if (posts[index]) { posts[index][field] = value; store.updateBlockContent(block.value.id, { posts }) }
+}
+function removeBlogPost(index) {
+  if (!block.value) return
+  const posts = (block.value.content?.posts || []).filter((_, i) => i !== index)
+  store.updateBlockContent(block.value.id, { posts })
+}
+function addBlogPost() {
+  if (!block.value) return
+  const posts = [...(block.value.content?.posts || []), { title: '', excerpt: '', image: '', category: '', date: '', url: '' }]
+  store.updateBlockContent(block.value.id, { posts })
+}
+
+// --- team members ---
+function updateTeamMember(index, field, value) {
+  if (!block.value) return
+  const members = JSON.parse(JSON.stringify(block.value.content?.members || []))
+  if (members[index]) { members[index][field] = value; store.updateBlockContent(block.value.id, { members }) }
+}
+function removeTeamMember(index) {
+  if (!block.value) return
+  const members = (block.value.content?.members || []).filter((_, i) => i !== index)
+  store.updateBlockContent(block.value.id, { members })
+}
+function addTeamMember() {
+  if (!block.value) return
+  const members = [...(block.value.content?.members || []), { name: '', role: '', photo: '', bio: '', linkedin: '', instagram: '' }]
+  store.updateBlockContent(block.value.id, { members })
+}
+
+// --- timeline items ---
+function updateTimelineItem(index, field, value) {
+  if (!block.value) return
+  const items = JSON.parse(JSON.stringify(block.value.content?.items || []))
+  if (items[index]) { items[index][field] = value; store.updateBlockContent(block.value.id, { items }) }
+}
+function removeTimelineItem(index) {
+  if (!block.value) return
+  const items = (block.value.content?.items || []).filter((_, i) => i !== index)
+  store.updateBlockContent(block.value.id, { items })
+}
+function addTimelineItem() {
+  if (!block.value) return
+  const items = [...(block.value.content?.items || []), { year: '', title: '', description: '' }]
+  store.updateBlockContent(block.value.id, { items })
 }
 </script>
 

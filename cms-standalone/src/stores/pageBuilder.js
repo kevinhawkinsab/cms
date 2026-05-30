@@ -266,6 +266,63 @@ const BLOCK_TYPES = {
       ]
     },
     defaultStyles: { marginBottom: '24px' }
+  },
+  'content-image': {
+    label: 'Contenido + Imagen',
+    icon: 'fas fa-columns',
+    defaultContent: {
+      eyebrow: 'NUESTRA HISTORIA',
+      heading: 'Un título que define la sección',
+      bodyTop: 'Párrafo superior con información relevante sobre el tema principal de esta sección.',
+      stats: [
+        { value: '100+', label: 'clientes activos' },
+        { value: '2018', label: 'año de inicio' }
+      ],
+      bodyBottom: 'Párrafo inferior con contexto adicional o cierre del mensaje.',
+      image: '',
+      imageAlt: '',
+      badgeLabel: 'ETIQUETA',
+      badgeText: 'Texto del badge',
+      imagePosition: 'right',
+      bgColor: '#f5f0eb'
+    },
+    defaultStyles: { marginBottom: '0' }
+  },
+  'blog-preview': {
+    label: 'Vista previa Blog',
+    icon: 'fas fa-rss',
+    defaultContent: {
+      eyebrow: 'NUESTRO BLOG',
+      title: 'Últimas publicaciones',
+      subtitle: '',
+      ctaText: 'Ver todos',
+      ctaUrl: '/blog',
+      columns: 3,
+      posts: []
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  team: {
+    label: 'Equipo',
+    icon: 'fas fa-users',
+    defaultContent: {
+      eyebrow: 'NUESTRO EQUIPO',
+      title: 'Conoce al equipo',
+      subtitle: '',
+      columns: 4,
+      members: []
+    },
+    defaultStyles: { marginBottom: '24px' }
+  },
+  timeline: {
+    label: 'Línea de tiempo',
+    icon: 'fas fa-stream',
+    defaultContent: {
+      eyebrow: 'NUESTRA HISTORIA',
+      title: 'Hitos importantes',
+      items: []
+    },
+    defaultStyles: { marginBottom: '24px' }
   }
 }
 
